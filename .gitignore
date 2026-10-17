@@ -1,0 +1,27 @@
+# Dependencies & environments
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Build artifacts
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+
+# Local logs & temp
+*.log
+scratch/
+
+# Older prototype & scratch folders
+teevra-frontend/
+Build_backend/
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

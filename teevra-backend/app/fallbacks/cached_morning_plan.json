@@ -1,0 +1,77 @@
+{
+  "plan_id": "PLAN_CACHED_FALLBACK_DEMO",
+  "parent_plan_id": null,
+  "created_at": "2026-10-18T06:00:00Z",
+  "trigger_type": "MORNING_PLAN",
+  "solver_status": "OPTIMAL",
+  "solve_time_sec": 0.42,
+  "kpi": {
+    "total_cost_inr": 84250.00,
+    "total_kwh": 12850.0,
+    "total_restart_kwh": 30.0,
+    "total_restarts": 1,
+    "heat_breaches_count": 0,
+    "output_percentage": 98.6,
+    "co2_saved_tco2": 0.0,
+    "cost_savings_inr": 16420.00,
+    "honest_co2_banner": "Time-shifting saves rupees, not CO2, at an annual average grid factor.",
+    "is_simulated_estimate": true,
+    "ui_label": "ISO 7243 screening check: exceedance triggers further action"
+  },
+  "baseline_kpi": {
+    "total_cost_inr": 100670.00,
+    "total_kwh": 12850.0,
+    "total_restart_kwh": 0.0,
+    "total_restarts": 0,
+    "heat_breaches_count": 4,
+    "output_percentage": 100.0,
+    "co2_saved_tco2": 0.0,
+    "cost_savings_inr": 0.0,
+    "honest_co2_banner": "Time-shifting saves rupees, not CO2, at an annual average grid factor.",
+    "is_simulated_estimate": true,
+    "ui_label": "ISO 7243 screening check: exceedance triggers further action"
+  },
+  "heat_buffers": [
+    {
+      "buffer_id": "BUF_FURNACE_BAY_D1_28",
+      "station_id": "FURNACE_BAY",
+      "day": 1,
+      "start_slot": 28,
+      "end_slot": 32,
+      "duration_minutes": 60,
+      "buffer_type": "60_MIN",
+      "peak_ambient_wbgt_c": 29.4,
+      "is_exhausted": false,
+      "remaining_capacity_minutes": 60,
+      "absorbed_incident_ids": []
+    },
+    {
+      "buffer_id": "BUF_FURNACE_BAY_D2_124",
+      "station_id": "FURNACE_BAY",
+      "day": 2,
+      "start_slot": 124,
+      "end_slot": 128,
+      "duration_minutes": 60,
+      "buffer_type": "60_MIN",
+      "peak_ambient_wbgt_c": 29.8,
+      "is_exhausted": false,
+      "remaining_capacity_minutes": 60,
+      "absorbed_incident_ids": []
+    }
+  ],
+  "gemini_explanation_text": "The Heat-Safe & Carbon-Aware schedule has been optimized across all 192 slots. By mathematically enforcing ISO 7243:2017 Table A.1 thermal thresholds, manual Class 3 furnace operations were shifted into cool morning hours, eliminating all 4 baseline heat breaches. Simultaneously, interruptible chiller and automated oven loads were shifted into the 10:00–16:00 solar window, capturing the 20% TGSPDCL tariff concession (Clause 4.2b) and yielding ₹16,420.00 in electricity bill savings while maintaining 98.6% throughput. 2 dedicated Heat Buffers were reserved to absorb worker rests without line stoppages. Note on emissions: Time-shifting saves rupees, not CO2, at an annual average grid factor.",
+  "citations": [
+    {
+      "source_title": "TGSPDCL FY2025-26 Retail Supply Tariff Order",
+      "clause": "Clause 4.2b: Solar Hours Concession",
+      "uri": "gs://thermaplan-ai-teevra-uploads/citations/TGSPDCL_FY26_Tariff_Order.pdf",
+      "snippet": "HT-I Industrial consumers shall receive a 20% concession on the base energy charge (₹7.50 down to ₹6.00/kWh) between 10:00 hrs and 16:00 hrs to incentivize solar consumption."
+    },
+    {
+      "source_title": "ISO 7243:2017 Ergonomics of the Thermal Environment",
+      "clause": "Table A.1: Reference Limits for Metabolic Rates",
+      "uri": "gs://thermaplan-ai-teevra-uploads/citations/ISO_7243_2017_Standard_Summary.pdf",
+      "snippet": "For high metabolic rate work (Class 3, 415W, e.g. heavy casting & furnace tending), the maximum WBGT threshold is 26.0°C for acclimatised personnel."
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "name": "TEEVRA: Heat-Safe, Carbon-Aware Production Scheduler",
+  "description": "An industrial production scheduling system protecting workers from extreme heat while optimizing carbon emissions, energy tariffs, and plant throughput.",
+  "requestFramePermissions": ["notifications", "audio"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

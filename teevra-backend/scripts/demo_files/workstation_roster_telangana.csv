@@ -1,0 +1,5 @@
+upload_batch_id,station_id,station_name,shift_id,workers_assigned,work_class,metabolic_watts,acclimatised,clothing_adj_c,simulated_globe_uplift_c,has_qualified_relief,relief_operator_id
+batch_default,FURNACE_BAY,High-Heat Casting & Furnace Bay,Shift_A,1,3,415,True,0.0,2.5,True,RELIEF_OP_04
+batch_default,CNC_BAY,Machining & CNC Tooling Shop,Shift_A,1,1,180,True,0.0,0.8,False,
+batch_default,PAINT_SHOP,Automated Paint Curing Bay,Shift_A,1,1,180,True,0.0,1.2,False,
+batch_default,UTILITY_ROOM,Central Chiller & Compressor Room,Shift_A,1,0,115,True,0.0,0.5,False,

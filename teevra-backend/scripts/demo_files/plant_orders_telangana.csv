@@ -1,0 +1,6 @@
+upload_batch_id,order_id,job_name,machine_id,station_id,routing_seq,duration_mins,duration_slots,kwh_per_op,restart_kwh,load_tag,splittable,due_slot,is_critical_melt
+batch_default,ORD_101,Induction Furnace Melt - Batch A,FURNACE_1,FURNACE_BAY,1,180,12,450.0,120.0,fixed,False,40,True
+batch_default,ORD_102,Induction Furnace Melt - Batch B,FURNACE_1,FURNACE_BAY,1,120,8,320.0,90.0,fixed,False,80,True
+batch_default,ORD_103,Automated Paint Curing Oven,OVEN_1,PAINT_SHOP,1,180,12,280.0,30.0,shiftable,False,90,False
+batch_default,ORD_101,Precision CNC Milling Stage,CNC_1,CNC_BAY,2,120,8,180.0,20.0,fixed,False,70,False
+batch_default,ORD_UTIL_1,Thermal Storage Chiller Pre-Cooling,CHILLER_1,UTILITY_ROOM,1,240,16,220.0,10.0,interruptible,True,120,False

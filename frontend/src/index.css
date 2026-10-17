@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-telugu: 'Noto Sans Telugu', 'Inter', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11", "tnum";
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+.font-telugu {
+  font-family: var(--font-telugu);
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Diagonal hatch pattern for heat buffer blocks: #FDE7C7 with #7A4100 hatch lines */
+.bg-heat-buffer {
+  background-color: #FDE7C7;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    #7A4100 0,
+    #7A4100 2px,
+    transparent 2px,
+    transparent 10px
+  );
+}
+
+.bg-heat-buffer-solid {
+  background-color: #FDE7C7;
+}
+
+/* Pulse animation for unacknowledged SOS */
+@keyframes sos-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(180, 35, 24, 0.7);
+    border-color: #B42318;
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(180, 35, 24, 0);
+    border-color: #FF6B5E;
+  }
+}
+
+.animate-sos-pulse {
+  animation: sos-pulse 1.4s infinite cubic-bezier(0.4, 0, 0.6, 1);
+}
+
+/* Custom scrollbars for industrial console */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #F4F5F7;
+}
+::-webkit-scrollbar-thumb {
+  background: #D9DDE2;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #5B636E;
+}
