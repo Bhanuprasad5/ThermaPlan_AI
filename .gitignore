@@ -43,6 +43,17 @@ accident.png
 last_plan.json
 **/last_plan.json
 
+# Test Suites & Test Artifacts (Clean Production Repository)
+test.pdf
+**/test.pdf
+tests/
+**/tests/
+*.test.ts
+*.test.tsx
+*.test.js
+*.test.py
+
+
 # Older Prototype Folders
 teevra-frontend/
 Build_backend/
