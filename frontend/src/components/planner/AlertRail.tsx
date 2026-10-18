@@ -193,7 +193,7 @@ export const AlertRail: React.FC = () => {
 
       {/* Rail Footer Telemetry Status */}
       <div className="p-2 border-t border-[#D9DDE2] bg-[#F4F5F7] text-[10px] text-[#5B636E] flex items-center justify-between">
-        <span>6 Tablets Online (30s Ping)</span>
+        <span>Station tablets report here</span>
         <span className="w-1.5 h-1.5 rounded-full bg-[#1E7A46]" title="Heartbeat Normal"></span>
       </div>
     </aside>

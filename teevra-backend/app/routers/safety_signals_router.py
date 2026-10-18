@@ -9,7 +9,9 @@ Safety Signals & Zero-AI Emergency SOS Router (Feature 5):
 import uuid
 from datetime import UTC, datetime
 
-from fastapi import APIRouter
+import asyncio
+
+from fastapi import APIRouter, HTTPException
 
 from app.core_math.ortools_solver import solve_dual_schedules
 from app.models.safety import (
@@ -17,6 +19,14 @@ from app.models.safety import (
     EmergencySOSRequest,
     EmergencySOSResponse,
     HazardReportRequest,
+    IncidentPhotoAlertRequest,
+    IncidentPhotoAlertResponse,
+)
+from app.services.incident_alert_service import (
+    build_caption,
+    describe_incident,
+    load_incident_photo,
+    send_telegram_photo,
 )
 from app.models.schedule import SchedulePlanResponse
 from app.services.bigquery_service import bq_service
@@ -86,6 +96,44 @@ async def trigger_emergency_sos(req: EmergencySOSRequest):
         fcm_multicast_dispatched=fcm_success,
         supervisor_alerted=fcm_success,
         timestamp_ist=now_ist,
+    )
+
+
+@router.post("/incident-photo", response_model=IncidentPhotoAlertResponse)
+async def alert_incident_photo(req: IncidentPhotoAlertRequest):
+    """Gemini describes the selected photo, then Telegram receives the photo and assessment."""
+    try:
+        image_bytes, mime, label = load_incident_photo(req.image_id)
+        assessment = await asyncio.to_thread(describe_incident, image_bytes, mime)
+        caption = build_caption(
+            req.station_name.strip() or "Unknown station",
+            label,
+            assessment,
+            datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC"),
+        )
+        message_id = await asyncio.to_thread(
+            send_telegram_photo,
+            image_bytes,
+            f"{req.image_id}.jpg",
+            mime,
+            caption,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Incident photo is not available") from exc
+    except RuntimeError as exc:
+        logger_message = str(exc)
+        raise HTTPException(status_code=502, detail=logger_message) from exc
+
+    return IncidentPhotoAlertResponse(
+        image_id=req.image_id,
+        photo_label=label,
+        situation=assessment["situation"],
+        recommended_action=assessment["recommended_action"],
+        gemini_model=assessment["model"],
+        telegram_sent=True,
+        telegram_message_id=message_id,
     )
 
 

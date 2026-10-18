@@ -16,26 +16,20 @@ import {
 } from 'lucide-react';
 import { usePlant } from '../../context/PlantContext';
 import { Proposal } from '../../types';
-import { HeatBadge } from '../common/HeatBadge';
-
 export const ContextPanel: React.FC = () => {
   const {
     activeProposal,
+    activePlan,
     approveProposal,
     rejectProposal,
-    stations,
-    selectedStationId,
-    setTraceDrawerOpen,
     solveMorningPlan,
+    solveError,
+    setTraceDrawerOpen,
   } = usePlant();
 
-  const [activeTab, setActiveTab] = useState<'proposal' | 'station'>('proposal');
   const [rejectReason, setRejectReason] = useState<string>('Already handled on the floor');
   const [rejectActionType, setRejectActionType] = useState<'keep' | 'replan'>('keep');
   const [showRejectModal, setShowRejectModal] = useState<boolean>(false);
-  const [manualWBGT, setManualWBGT] = useState<string>('29.5');
-
-  const selectedStation = stations.find((s) => s.id === selectedStationId) || stations[0];
 
   return (
     <aside
@@ -43,31 +37,15 @@ export const ContextPanel: React.FC = () => {
       className="w-full lg:w-[380px] shrink-0 border-l border-[#D9DDE2] bg-white flex flex-col h-full overflow-hidden"
     >
       {/* Tab Switcher */}
-      <div className="flex border-b border-[#D9DDE2] bg-[#F4F5F7]">
-        <button
-          onClick={() => setActiveTab('proposal')}
-          className={`flex-1 py-2.5 text-xs font-semibold text-center border-b-2 transition-colors ${
-            activeTab === 'proposal'
-              ? 'border-[#0F5FA8] text-[#0F5FA8] bg-white'
-              : 'border-transparent text-[#5B636E] hover:text-[#1B1F24]'
-          }`}
-        >
-          Active Proposal {activeProposal ? '(1)' : '(0)'}
-        </button>
-        <button
-          onClick={() => setActiveTab('station')}
-          className={`flex-1 py-2.5 text-xs font-semibold text-center border-b-2 transition-colors ${
-            activeTab === 'station'
-              ? 'border-[#0F5FA8] text-[#0F5FA8] bg-white'
-              : 'border-transparent text-[#5B636E] hover:text-[#1B1F24]'
-          }`}
-        >
-          Station Diagnostics
-        </button>
+      <div className="px-4 py-2.5 border-b border-[#D9DDE2] bg-[#F4F5F7] text-xs font-semibold text-[#0F5FA8]">
+        This plan
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {activeTab === 'proposal' && (
+        {solveError && <p className="text-xs text-[#B42318] bg-red-50 border border-red-200 rounded p-2">{solveError}</p>}
+        {activePlan && (
+          <p className="text-xs text-[#1B1F24] leading-relaxed">{activePlan.gemini_explanation_text || activePlan.summary}</p>
+        )}
           <>
             {activeProposal ? (
               <div className="space-y-4">
@@ -78,7 +56,7 @@ export const ContextPanel: React.FC = () => {
                       Proposed Plan Change
                     </span>
                     <span className="text-[10px] text-[#5B636E]">
-                      Passes Frozen Window (Safety)
+                      {activePlan?.solver_status || 'Solved'}
                     </span>
                   </div>
                   <h3 className="font-bold text-sm text-[#1B1F24] leading-snug">
@@ -114,9 +92,9 @@ export const ContextPanel: React.FC = () => {
 
                   <div className="text-[10px] text-[#5B636E] pt-1 border-t border-[#D9DDE2] flex items-center justify-between">
                     <span>
-                      {activeProposal.aiDetails?.isCached
-                        ? `Cached Gemini response, recorded ${activeProposal.aiDetails?.recordedDate || 'Oct 18, 2026'}`
-                        : 'Real @google/genai API call'}
+                      {activePlan?.explanation_trace?.source === 'gemini'
+                        ? `${activePlan.explanation_trace.model_version || activePlan.explanation_trace.model}, ${activePlan.explanation_trace.latency_ms} ms`
+                        : 'Numbers come from the solver. The note restates them.'}
                     </span>
                     <button
                       onClick={() => setTraceDrawerOpen(true)}
@@ -147,34 +125,27 @@ export const ContextPanel: React.FC = () => {
 
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div className="bg-[#F4F5F7] p-2 rounded">
-                      <div className="text-[10px] text-[#5B636E]">Throughput Output</div>
+                      <div className="text-[10px] text-[#5B636E]">Output</div>
                       <div className="font-bold text-[#1B1F24]">
-                        {activeProposal.impactMetrics.outputAfter}%{' '}
-                        <span className="text-[10px] text-[#1E7A46] font-normal">
-                          (unaffected)
-                        </span>
+                        {activeProposal.impactMetrics.outputBefore}% → {activeProposal.impactMetrics.outputAfter}%
                       </div>
                     </div>
-
                     <div className="bg-[#F4F5F7] p-2 rounded">
-                      <div className="text-[10px] text-[#5B636E]">Heat Margin</div>
-                      <div className="font-bold text-[#1E7A46]">
-                        +{activeProposal.impactMetrics.minHeatMarginAfter}°C{' '}
-                        <span className="text-[10px] font-normal text-[#1E7A46]">(+0.3°C safer)</span>
+                      <div className="text-[10px] text-[#5B636E]">Restarts</div>
+                      <div className="font-bold text-[#1B1F24]">
+                        {activeProposal.impactMetrics.restartsBefore} → {activeProposal.impactMetrics.restartsAfter}
                       </div>
                     </div>
-
                     <div className="bg-[#F4F5F7] p-2 rounded">
-                      <div className="text-[10px] text-[#5B636E]">Energy Total</div>
+                      <div className="text-[10px] text-[#5B636E]">Energy</div>
                       <div className="font-bold text-[#1B1F24]">
                         {activeProposal.impactMetrics.kwhAfter.toLocaleString()} kWh
                       </div>
                     </div>
-
                     <div className="bg-[#F4F5F7] p-2 rounded">
-                      <div className="text-[10px] text-[#5B636E]">Buffer Used</div>
-                      <div className="font-bold text-[#7A4100]">
-                        10 min <span className="text-[10px] text-[#5B636E]">(35m remain)</span>
+                      <div className="text-[10px] text-[#5B636E]">Bill</div>
+                      <div className="font-bold text-[#1B1F24]">
+                        ₹{activeProposal.impactMetrics.inrBefore.toLocaleString()} → ₹{activeProposal.impactMetrics.inrAfter.toLocaleString()}
                       </div>
                     </div>
                   </div>
@@ -184,7 +155,7 @@ export const ContextPanel: React.FC = () => {
                 <div className="space-y-2 pt-2">
                   {activeProposal.approvedAt ? (
                     <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-center text-xs text-[#0F5FA8] font-bold">
-                      ✓ Approved at {activeProposal.approvedAt}. Re-plan executed. Worker notified in Telugu.
+                      Approved at {activeProposal.approvedAt}.
                     </div>
                   ) : activeProposal.rejectionReason ? (
                     <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-center text-xs text-[#B42318] font-bold">
@@ -223,7 +194,7 @@ export const ContextPanel: React.FC = () => {
                           Reject & Re-plan
                         </button>
                         <button
-                          onClick={() => alert('Edit action: Change rest duration or relief operator assignment.')}
+                          onClick={() => setRejectReason('Edit requested')}
                           className="py-2 px-1 rounded-md bg-white hover:bg-slate-100 text-[#1B1F24] border border-[#D9DDE2] text-[11px] font-semibold transition-colors text-center cursor-pointer"
                         >
                           Edit
@@ -241,86 +212,7 @@ export const ContextPanel: React.FC = () => {
               </div>
             )}
           </>
-        )}
 
-        {activeTab === 'station' && (
-          <div className="space-y-4 text-xs">
-            {/* Station Title */}
-            <div>
-              <h3 className="font-bold text-sm text-[#1B1F24]">{selectedStation.nameEn}</h3>
-              <p className="font-telugu text-xs text-[#5B636E]">{selectedStation.nameTe}</p>
-            </div>
-
-            {/* Heat Level Status */}
-            <div className="border border-[#D9DDE2] rounded-lg p-3 bg-[#F4F5F7] space-y-2">
-              <span className="text-[10px] font-bold text-[#5B636E] uppercase tracking-wider">
-                Current Heat Level
-              </span>
-              <HeatBadge level={selectedStation.heatLevel} showOriginTag size="md" />
-            </div>
-
-            {/* Environmental Diagnostics */}
-            <div className="border border-[#D9DDE2] rounded-lg p-3 space-y-2">
-              <span className="text-[10px] font-bold text-[#5B636E] uppercase tracking-wider">
-                Station Inputs & Provenance
-              </span>
-
-              <div className="space-y-1.5 text-[11px]">
-                <div className="flex justify-between py-1 border-b border-[#D9DDE2]/60">
-                  <span className="text-[#5B636E]">Outdoor Forecast:</span>
-                  <span className="font-bold text-[#1B1F24]">38.5°C (replayed)</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-[#D9DDE2]/60">
-                  <span className="text-[#5B636E]">Station Offset:</span>
-                  <span className="font-bold text-[#1B1F24]">
-                    +{selectedStation.offsetC}°C (Assumed uplift, simulated)
-                  </span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-[#D9DDE2]/60">
-                  <span className="text-[#5B636E]">Metabolic Workload:</span>
-                  <span className="font-bold text-[#1B1F24] capitalize">
-                    {selectedStation.metabolicClass}
-                  </span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-[#D9DDE2]/60">
-                  <span className="text-[#5B636E]">ISO 7243 Standard:</span>
-                  <span className="font-bold text-[#0F5FA8]">ISO 7243:2017 Table C.1</span>
-                </div>
-                <div className="flex justify-between py-1">
-                  <span className="text-[#5B636E]">Continuous Pour Step:</span>
-                  <span className="font-bold text-[#1B1F24]">
-                    {selectedStation.activePour ? 'Active (non-interruptible)' : 'None'}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Manual WBGT Entry Field */}
-            <div className="border border-[#D9DDE2] rounded-lg p-3 space-y-2 bg-slate-50">
-              <span className="text-[10px] font-bold text-[#1B1F24] uppercase tracking-wider">
-                Manual WBGT Reading Override
-              </span>
-              <p className="text-[11px] text-[#5B636E]">
-                Enter physical wet-bulb globe thermometer measurement taken by EHS officer.
-              </p>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={manualWBGT}
-                  onChange={(e) => setManualWBGT(e.target.value)}
-                  className="flex-1 px-2.5 py-1.5 text-xs bg-white border border-[#D9DDE2] rounded font-mono"
-                  placeholder="29.5"
-                />
-                <button
-                  onClick={() => alert(`Logged manual WBGT measurement ${manualWBGT}°C for ${selectedStation.nameEn}`)}
-                  className="px-3 py-1.5 rounded bg-[#0F5FA8] text-white font-semibold text-xs"
-                >
-                  Save
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Rejection Modal */}

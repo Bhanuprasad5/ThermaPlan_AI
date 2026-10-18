@@ -1,7 +1,7 @@
 """
 Seeds official versioned factor tables and 48-hour baseline weather into BigQuery.
 Regimes seeded:
-1. CEA (0.716 tCO2/MWh, Dec 2024 Baseline Database v20.0)
+1. CEA (0.675 tCO2/MWh, Baseline Database v22)
 2. TGSPDCL ToD Tariffs (Base ₹7.50, Solar ₹6.00, Peak ₹9.00)
 3. ISO 7243:2017 Table A.1 Heat Limits (Classes 0 through 4)
 4. Initial 48-Hour Diurnal Weather Baseline (192 slots)

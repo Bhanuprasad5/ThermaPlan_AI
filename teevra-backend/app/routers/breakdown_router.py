@@ -1,106 +1,131 @@
 """
 Breakdown Rescheduler Router (Feature 3):
-- Handles machine faults (e.g. CNC_1 spindle drive failure)
-- Enforces 2-Hour Frozen Window (8 slots = 120 minutes) on healthy machines
-- Re-routes interrupted jobs to compatible backup machines
-- Validates schedule via Deterministic Safety Gate
+- Replans the plan currently in use when a machine faults
+- Healthy machines keep their work for the next 2 hours (frozen window)
+- The faulted machine is locked for the repair time
+- The replan is rejected if it adds heat breaches (deterministic safety gate)
 """
 
-from fastapi import APIRouter, HTTPException
+import asyncio
 
-from app.core_math.ortools_solver import solve_dual_schedules
+import structlog
+from fastapi import APIRouter, BackgroundTasks, HTTPException
+
+from app.core_math.ortools_solver import _job_key, solve_dual_schedules
+from app.core_math.plan_insights import machine_label, slot_clock
 from app.core_math.safety_validator import validate_delta_replan_safety
 from app.models.safety import MachineFaultWebhookRequest
 from app.models.schedule import SchedulePlanResponse
 from app.services.bigquery_service import bq_service
 from app.services.firestore_fcm_service import firestore_fcm_service
-from app.services.gemini_flash_service import gemini_flash_service
+from app.services.gemini_flash_service import OFFICIAL_CITATIONS
 from app.services.pubsub_service import pubsub_service
+from app.services.run_history import ActiveContext, run_history
 
+logger = structlog.get_logger(__name__)
 router = APIRouter(prefix="/api/v1/breakdown", tags=["Breakdown Rescheduler"])
+
+FROZEN_SLOTS = 8  # 2 hours at 15-minute slots
 
 
 @router.post("/trigger", response_model=SchedulePlanResponse)
-async def trigger_machine_breakdown(req: MachineFaultWebhookRequest):
-    """
-    Simulates or receives Pub/Sub machine fault webhook.
-    Enforces:
-    1. 2-Hour Frozen Window lock [fault_slot, fault_slot + 7] for all healthy lines.
-    2. Faulted machine lockout for repair_duration_slots.
-    3. Re-solving with zero heat breaches and preserved heat buffers.
-    4. Deterministic Safety Gate validation.
-    """
-    # 1. Publish fault event to Pub/Sub
-    pubsub_service.publish_machine_fault(
-        machine_id=req.machine_id,
-        fault_slot=req.fault_slot,
-        repair_duration_slots=req.repair_duration_slots,
-        reason=req.reason,
-    )
+async def trigger_machine_breakdown(req: MachineFaultWebhookRequest, background_tasks: BackgroundTasks):
+    ctx = run_history.active
+    if ctx is None:
+        raise HTTPException(status_code=409, detail="No plan is active yet. Run the morning plan first.")
+    if req.machine_id not in {o.machine_id for o in ctx.orders}:
+        raise HTTPException(status_code=400, detail=f"{req.machine_id} has no work in the active plan.")
 
-    # 2. Update Firestore live machine state
-    firestore_fcm_service.update_station_state(
-        "CNC_BAY",
-        {
-            "status": "MACHINE_FAULT",
-            "faulted_machine": req.machine_id,
-            "fault_slot": req.fault_slot,
-            "repair_slots": req.repair_duration_slots,
-            "alert": f"{req.machine_id} FAULT: {req.reason}. 2-hour frozen window locked.",
-        },
-    )
+    prev_plan = ctx.plan
+    seq_by_job = {(o.order_id, o.machine_id): _job_key(o) for o in ctx.orders}
+    prev_assignments: dict[tuple[str, int], int] = {}
+    for slot in prev_plan.schedule_slots:
+        if slot.is_active and not slot.is_heat_buffer:
+            jid = seq_by_job.get((slot.order_id, slot.machine_id))
+            if jid:
+                prev_assignments[(jid, slot.slot_index)] = 1
 
-    # 3. Retrieve active plan
-    prev_plan = bq_service.get_latest_solved_schedule()
-    orders = bq_service.get_plant_orders()
-    rosters = bq_service.get_workstation_roster()
-    weather_slots = bq_service.get_weather_forecast_48h()
-
-    # Build previous assignment map for healthy frozen window lock
-    order_seq_map = {o.order_id: o.routing_seq for o in orders}
-    prev_assignments: dict[tuple, int] = {}
-    if prev_plan:
-        for slot in prev_plan.schedule_slots:
-            seq = order_seq_map.get(slot.order_id, 1)
-            j_id = f"{slot.order_id}_{seq}"
-            prev_assignments[(j_id, slot.slot_index)] = 1 if slot.is_active else 0
-            prev_assignments[(f"{slot.order_id}_1", slot.slot_index)] = 1 if slot.is_active else 0
-
-    frozen_start = req.fault_slot
-    frozen_end = min(191, req.fault_slot + 7)  # 8 slots = 120 minutes
-
-    # Re-solve with frozen window constraints and faulted machine lockout
-    baseline, new_plan = solve_dual_schedules(
-        orders=orders,
-        rosters=rosters,
-        weather_slots=weather_slots,
-        frozen_window=(frozen_start, frozen_end),
+    frozen = (req.fault_slot, min(191, req.fault_slot + FROZEN_SLOTS - 1))
+    _, new_plan = await asyncio.to_thread(
+        solve_dual_schedules,
+        orders=ctx.orders,
+        rosters=ctx.rosters,
+        weather_slots=ctx.weather,
+        frozen_window=frozen,
         previous_assignments=prev_assignments,
         faulted_machine_id=req.machine_id,
         fault_slot=req.fault_slot,
         repair_duration_slots=req.repair_duration_slots,
     )
 
-    new_plan.trigger_type = "MACHINE_BREAKDOWN"
-    new_plan.parent_plan_id = prev_plan.plan_id if prev_plan else None
-
-    # 4. Deterministic Safety Gate validation
-    if prev_plan:
-        is_safe, safety_msg = validate_delta_replan_safety(
-            previous_slots=prev_plan.schedule_slots, new_slots=new_plan.schedule_slots
-        )
-        if not is_safe:
-            raise HTTPException(status_code=400, detail=safety_msg)
-
-    # 5. Grounded Gemini explanation
-    explanation_res = await gemini_flash_service.generate_plan_explanation(
-        kpi=new_plan.kpi,
-        baseline_kpi=prev_plan.kpi if prev_plan else None,
-        heat_buffer_count=len(new_plan.heat_buffers),
-        trigger_type=f"MACHINE_BREAKDOWN ({req.machine_id})",
+    is_safe, safety_msg = validate_delta_replan_safety(
+        previous_slots=prev_plan.schedule_slots, new_slots=new_plan.schedule_slots
     )
-    new_plan.gemini_explanation_text = explanation_res["explanation"]
-    new_plan.citations = explanation_res["citations"]
+    if not is_safe:
+        raise HTTPException(status_code=422, detail=safety_msg)
 
-    bq_service.save_solved_schedule(new_plan)
+    new_plan.trigger_type = "MACHINE_BREAKDOWN"
+    new_plan.parent_plan_id = prev_plan.plan_id
+    new_plan.parent_plan_hash = prev_plan.plan_hash
+    new_plan.dataset_label = prev_plan.dataset_label
+    # Compare the replan with the plan it replaces, not with the naive baseline.
+    new_plan.baseline_kpi = prev_plan.kpi
+
+    new_plan.baseline_schedule_slots = [s for s in prev_plan.schedule_slots if s.is_active]
+
+    prev_moves = {(m.order_id, m.machine_id): m for m in prev_plan.job_moves}
+    moved, dropped = [], []
+    for m in new_plan.job_moves:
+        p = prev_moves.get((m.order_id, m.machine_id))
+        if p:
+            m.baseline_start_slot, m.baseline_end_slot = p.start_slot, p.end_slot
+            m.baseline_cost_inr, m.baseline_heat_slots = p.cost_inr, p.heat_slots
+        if m.kind == "dropped":
+            m.reason = "Cannot finish by its due time on this machine during the repair. Needs another machine or overtime."
+            dropped.append(m)
+            continue
+        if p and p.start_slot == m.start_slot:
+            m.kind, m.reason = "unchanged", "Kept as planned."
+        else:
+            m.kind = "machine"
+            m.reason = f"Replanned around the {machine_label(req.machine_id)} breakdown."
+            moved.append(m)
+    repair_h = req.repair_duration_slots * 15 / 60
+    parts = [
+        f"{machine_label(req.machine_id)} down {repair_h:g} h from {slot_clock(req.fault_slot, 15)}",
+        f"{len(moved)} job{'s' if len(moved) != 1 else ''} replanned",
+        "other machines keep their next 2 h",
+        f"unsafe-heat work {new_plan.kpi.heat_breaches_count * 15 / 60:g} h",
+    ]
+    if dropped:
+        parts.append(f"{', '.join(m.job_name for m in dropped)} cannot meet its due time and needs a decision")
+    else:
+        delta = new_plan.kpi.total_cost_inr - prev_plan.kpi.total_cost_inr
+        parts.append(f"bill {'+' if delta >= 0 else '−'}₹{abs(delta):,.0f} vs previous plan")
+    parts.append(f"output {new_plan.kpi.output_percentage:g}%")
+    new_plan.summary = "; ".join(parts) + "."
+
+    new_plan.gemini_explanation_text = new_plan.summary
+    new_plan.citations = OFFICIAL_CITATIONS
+
+    run_history.set_active(ActiveContext(new_plan, ctx.orders, ctx.rosters, ctx.weather))
+    run_history.record(new_plan)
+    background_tasks.add_task(_publish, req, new_plan)
     return new_plan
+
+
+def _publish(req: MachineFaultWebhookRequest, plan: SchedulePlanResponse) -> None:
+    try:
+        pubsub_service.publish_machine_fault(
+            machine_id=req.machine_id,
+            fault_slot=req.fault_slot,
+            repair_duration_slots=req.repair_duration_slots,
+            reason=req.reason,
+        )
+        firestore_fcm_service.update_station_state(
+            req.machine_id,
+            {"status": "MACHINE_FAULT", "fault_slot": req.fault_slot, "repair_slots": req.repair_duration_slots},
+        )
+        bq_service.save_solved_schedule(plan)
+    except Exception as e:
+        logger.warning("breakdown_publish_failed", error=str(e))

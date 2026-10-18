@@ -1,46 +1,9 @@
 upload_batch_id,order_id,job_name,machine_id,station_id,routing_seq,duration_mins,duration_slots,kwh_per_op,restart_kwh,load_tag,splittable,due_slot,is_critical_melt
-BATCH_MON_AERO_01,ORD_AERO_01,Aerospace & Defense Heavy Casting - High Temp Primary Melt (Batch #01),FURNACE_1,FURNACE_BAY,1,180,12,461.3,122.9,fixed,False,42,True
-BATCH_MON_AERO_01,ORD_AERO_02,Aerospace & Defense Heavy Casting - Precision Ingot Continuous Pour (Batch #02),FURNACE_2,FURNACE_BAY,1,150,10,379.2,97.2,fixed,False,39,True
-BATCH_MON_AERO_01,ORD_AERO_03,Aerospace & Defense Heavy Casting - Billet Induction Pre-Heating (Batch #03),FURNACE_3,FURNACE_BAY,1,210,14,471.1,110.5,fixed,False,50,True
-BATCH_MON_AERO_01,ORD_AERO_04,Pre-Sorted Scrap Staging & Charge Prep (Batch #04),CHARGING_BAY,FURNACE_BAY,1,120,8,109.1,14.3,fixed,False,35,False
-BATCH_MON_AERO_01,ORD_AERO_05,Heavy Gantry Milling Rough Stage (Batch #05),CNC_1,CNC_BAY,2,180,12,184.9,20.2,fixed,False,59,False
-BATCH_MON_AERO_01,ORD_AERO_06,5-Axis High-Tolerance Complex Contouring (Batch #06),CNC_2,CNC_BAY,3,240,16,213.4,25.4,shiftable,False,84,False
-BATCH_MON_AERO_01,ORD_AERO_07,Axial Journal High-Speed Lathe Turning (Batch #07),CNC_3,CNC_BAY,2,210,14,173.6,17.9,shiftable,False,79,False
-BATCH_MON_AERO_01,ORD_AERO_08,Multitasking Complex Flange Pocketing (Batch #08),CNC_4,CNC_BAY,2,180,12,165.0,14.3,shiftable,False,85,False
-BATCH_MON_AERO_01,ORD_AERO_09,Micro-Precision Diamond Honing & Deburr (Batch #09),CNC_5,CNC_BAY,3,120,8,86.9,9.9,shiftable,False,98,False
-BATCH_MON_AERO_01,ORD_AERO_10,Anti-Corrosive Thermal Barrier Coating (Batch #10),PAINT_BOOTH,PAINT_SHOP,4,180,12,231.7,31.4,shiftable,False,95,False
-BATCH_MON_AERO_01,ORD_AERO_11,Infrared Epoxy Powder Polymerization (Batch #11),OVEN_2,PAINT_SHOP,4,210,14,259.3,34.6,shiftable,False,106,False
-BATCH_MON_AERO_01,ORD_AERO_12,Controlled Atmosphere Vacuum Quench & Temper (Batch #12),HEAT_TREAT_1,OVEN_BAY,5,270,18,403.6,50.5,shiftable,False,116,False
-BATCH_MON_AERO_01,ORD_AERO_13,Robotic High-Torque Sub-Assembly Staging (Batch #13),ASSEMBLY_1,ASSEMBLY_BAY,6,150,10,42.9,8.0,fixed,False,138,False
-BATCH_MON_AERO_01,ORD_AERO_14,Final Structural Bolting & Fastener Torqueing (Batch #14),ASSEMBLY_2,ASSEMBLY_BAY,6,180,12,57.6,9.9,fixed,False,137,False
-BATCH_MON_AERO_01,ORD_AERO_15,Laser CMM Micron Scan & NDT Ultrasonic Check (Batch #15),QUALITY_INSPECT,QUALITY_BAY,7,90,6,29.4,5.1,shiftable,False,154,False
-BATCH_MON_AERO_01,ORD_AERO_16,Central Glycol Chiller Thermal Pre-Cooling (Batch #16),CHILLER_1,UTILITY_ROOM,1,240,16,221.7,10.2,interruptible,True,161,False
-BATCH_MON_AERO_01,ORD_AERO_17,Aerospace & Defense Heavy Casting - High Temp Primary Melt (Batch #17),FURNACE_1,FURNACE_BAY,1,180,12,487.7,123.3,fixed,False,80,True
-BATCH_MON_AERO_01,ORD_AERO_18,Aerospace & Defense Heavy Casting - Precision Ingot Continuous Pour (Batch #18),FURNACE_2,FURNACE_BAY,1,150,10,403.9,98.5,fixed,False,85,True
-BATCH_MON_AERO_01,ORD_AERO_19,Aerospace & Defense Heavy Casting - Billet Induction Pre-Heating (Batch #19),FURNACE_3,FURNACE_BAY,1,210,14,449.8,111.5,fixed,False,94,True
-BATCH_MON_AERO_01,ORD_AERO_20,Pre-Sorted Scrap Staging & Charge Prep (Batch #20),CHARGING_BAY,FURNACE_BAY,1,120,8,106.3,14.8,fixed,False,79,False
-BATCH_MON_AERO_01,ORD_AERO_21,Heavy Gantry Milling Rough Stage (Batch #21),CNC_1,CNC_BAY,2,180,12,185.6,20.9,fixed,False,114,False
-BATCH_MON_AERO_01,ORD_AERO_22,5-Axis High-Tolerance Complex Contouring (Batch #22),CNC_2,CNC_BAY,3,240,16,210.6,25.3,shiftable,False,134,False
-BATCH_MON_AERO_01,ORD_AERO_23,Axial Journal High-Speed Lathe Turning (Batch #23),CNC_3,CNC_BAY,2,210,14,179.0,17.4,shiftable,False,127,False
-BATCH_MON_AERO_01,ORD_AERO_24,Multitasking Complex Flange Pocketing (Batch #24),CNC_4,CNC_BAY,2,180,12,156.3,15.6,shiftable,False,135,False
-BATCH_MON_AERO_01,ORD_AERO_25,Micro-Precision Diamond Honing & Deburr (Batch #25),CNC_5,CNC_BAY,3,120,8,90.5,10.2,shiftable,False,145,False
-BATCH_MON_AERO_01,ORD_AERO_26,Anti-Corrosive Thermal Barrier Coating (Batch #26),PAINT_BOOTH,PAINT_SHOP,4,180,12,246.6,29.2,shiftable,False,151,False
-BATCH_MON_AERO_01,ORD_AERO_27,Infrared Epoxy Powder Polymerization (Batch #27),OVEN_2,PAINT_SHOP,4,210,14,278.2,34.7,shiftable,False,149,False
-BATCH_MON_AERO_01,ORD_AERO_28,Controlled Atmosphere Vacuum Quench & Temper (Batch #28),HEAT_TREAT_1,OVEN_BAY,5,270,18,378.7,52.2,shiftable,False,160,False
-BATCH_MON_AERO_01,ORD_AERO_29,Robotic High-Torque Sub-Assembly Staging (Batch #29),ASSEMBLY_1,ASSEMBLY_BAY,6,150,10,44.2,8.1,fixed,False,185,False
-BATCH_MON_AERO_01,ORD_AERO_30,Final Structural Bolting & Fastener Torqueing (Batch #30),ASSEMBLY_2,ASSEMBLY_BAY,6,180,12,57.1,10.1,fixed,False,190,False
-BATCH_MON_AERO_01,ORD_AERO_31,Laser CMM Micron Scan & NDT Ultrasonic Check (Batch #31),QUALITY_INSPECT,QUALITY_BAY,7,90,6,29.3,4.9,shiftable,False,191,False
-BATCH_MON_AERO_01,ORD_AERO_32,Central Glycol Chiller Thermal Pre-Cooling (Batch #32),CHILLER_1,UTILITY_ROOM,1,240,16,220.9,10.2,interruptible,True,191,False
-BATCH_MON_AERO_01,ORD_AERO_33,Aerospace & Defense Heavy Casting - High Temp Primary Melt (Batch #33),FURNACE_1,FURNACE_BAY,1,180,12,499.1,118.8,fixed,False,134,True
-BATCH_MON_AERO_01,ORD_AERO_34,Aerospace & Defense Heavy Casting - Precision Ingot Continuous Pour (Batch #34),FURNACE_2,FURNACE_BAY,1,150,10,409.4,91.6,fixed,False,135,True
-BATCH_MON_AERO_01,ORD_AERO_35,Aerospace & Defense Heavy Casting - Billet Induction Pre-Heating (Batch #35),FURNACE_3,FURNACE_BAY,1,210,14,441.2,105.0,fixed,False,143,True
-BATCH_MON_AERO_01,ORD_AERO_36,Pre-Sorted Scrap Staging & Charge Prep (Batch #36),CHARGING_BAY,FURNACE_BAY,1,120,8,106.2,14.5,fixed,False,123,False
-BATCH_MON_AERO_01,ORD_AERO_37,Heavy Gantry Milling Rough Stage (Batch #37),CNC_1,CNC_BAY,2,180,12,188.5,19.1,fixed,False,162,False
-BATCH_MON_AERO_01,ORD_AERO_38,5-Axis High-Tolerance Complex Contouring (Batch #38),CNC_2,CNC_BAY,3,240,16,222.1,24.9,shiftable,False,178,False
-BATCH_MON_AERO_01,ORD_AERO_39,Axial Journal High-Speed Lathe Turning (Batch #39),CNC_3,CNC_BAY,2,210,14,183.2,18.6,shiftable,False,171,False
-BATCH_MON_AERO_01,ORD_AERO_40,Multitasking Complex Flange Pocketing (Batch #40),CNC_4,CNC_BAY,2,180,12,162.9,14.4,shiftable,False,177,False
-BATCH_MON_AERO_01,ORD_AERO_41,Micro-Precision Diamond Honing & Deburr (Batch #41),CNC_5,CNC_BAY,3,120,8,92.3,10.3,shiftable,False,190,False
-BATCH_MON_AERO_01,ORD_AERO_42,Anti-Corrosive Thermal Barrier Coating (Batch #42),PAINT_BOOTH,PAINT_SHOP,4,180,12,230.7,29.8,shiftable,False,191,False
-BATCH_MON_AERO_01,ORD_AERO_43,Infrared Epoxy Powder Polymerization (Batch #43),OVEN_2,PAINT_SHOP,4,210,14,256.6,35.8,shiftable,False,191,False
-BATCH_MON_AERO_01,ORD_AERO_44,Controlled Atmosphere Vacuum Quench & Temper (Batch #44),HEAT_TREAT_1,OVEN_BAY,5,270,18,380.8,50.0,shiftable,False,191,False
-BATCH_MON_AERO_01,ORD_AERO_45,Robotic High-Torque Sub-Assembly Staging (Batch #45),ASSEMBLY_1,ASSEMBLY_BAY,6,150,10,45.0,7.7,fixed,False,191,False
+BATCH_MON,MON-01,Ladle melt A,FURNACE_1,FURNACE_BAY,1,360,24,360,12,fixed,False,191,True
+BATCH_MON,MON-02,Ladle melt B,FURNACE_1,FURNACE_BAY,1,360,24,360,12,fixed,False,191,True
+BATCH_MON,MON-03,Housing mill,CNC_1,CNC_BAY,1,120,8,80,4,shiftable,False,191,False
+BATCH_MON,MON-04,Shaft turn,CNC_2,CNC_BAY,1,120,8,80,4,shiftable,False,191,False
+BATCH_MON,MON-05,Flange mill,CNC_3,CNC_BAY,1,120,8,80,4,shiftable,False,191,False
+BATCH_MON,MON-06,Paint cure,OVEN_1,OVEN_1,1,120,8,80,4,shiftable,False,191,False
+BATCH_MON,MON-07,Ice bank charge,CHILLER_1,CHILLER_1,1,120,8,80,20,interruptible,True,191,False
+BATCH_MON,MON-08,Compressed air,COMP_1,COMP_1,1,120,8,80,4,shiftable,False,191,False

@@ -158,11 +158,11 @@ export interface Proposal {
     action: string;
     unsureFieldsCount: number;
     modelVersion: string;
-    region: string;
-    inputTokens: number;
-    outputTokens: number;
-    latencyMs: number;
-    isCached: boolean;
+    region?: string;
+    inputTokens?: number;
+    outputTokens?: number;
+    latencyMs?: number;
+    isCached?: boolean;
     recordedDate?: string;
   };
   approvedAt?: string;
@@ -183,7 +183,7 @@ export interface TraceEvent {
   latencyMs: number;
   criticResult: { passed: boolean; rule: string };
   approvalStatus: string;
-  rePlanSolver: {
+  rePlanSolver?: {
     status: 'OPTIMAL' | 'FEASIBLE';
     solveTimeSec: number;
     seed: number;

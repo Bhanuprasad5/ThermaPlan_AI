@@ -7,6 +7,8 @@ interface HeatBadgeProps {
   showTelugu?: boolean;
   size?: 'sm' | 'md' | 'lg';
   showOriginTag?: boolean;
+  localWord?: string;
+  localFontClass?: string;
 }
 
 export const HeatBadge: React.FC<HeatBadgeProps> = ({
@@ -14,6 +16,8 @@ export const HeatBadge: React.FC<HeatBadgeProps> = ({
   showTelugu = true,
   size = 'md',
   showOriginTag = false,
+  localWord,
+  localFontClass = '',
 }) => {
   const info = HEAT_LEVELS[level];
 
@@ -44,7 +48,9 @@ export const HeatBadge: React.FC<HeatBadgeProps> = ({
         {level === 4 && <AlertTriangle size={size === 'sm' ? 14 : 16} color={iconColor} />}
 
         <span>{info.wordEn}</span>
-        {showTelugu && (
+        {localWord ? (
+          <span className={`${localFontClass} opacity-90 border-l border-current/25 pl-1.5`}>{localWord}</span>
+        ) : showTelugu && (
           <span className="font-telugu opacity-90 border-l border-current/25 pl-1.5">
             {info.wordTe}
           </span>

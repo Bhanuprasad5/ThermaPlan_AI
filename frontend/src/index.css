@@ -18,6 +18,18 @@
   font-family: var(--font-telugu);
 }
 
+.font-hindi {
+  font-family: 'Noto Sans Devanagari', 'Inter', sans-serif;
+}
+
+.font-japanese {
+  font-family: 'Noto Sans JP', 'Inter', sans-serif;
+}
+
+.font-chinese {
+  font-family: 'Noto Sans SC', 'Inter', sans-serif;
+}
+
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }

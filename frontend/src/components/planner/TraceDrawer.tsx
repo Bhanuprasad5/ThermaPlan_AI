@@ -169,20 +169,20 @@ export const TraceDrawer: React.FC = () => {
                     <div className="space-y-1 font-mono text-[11px]">
                       <div className="flex justify-between">
                         <span className="text-[#5B636E]">Status:</span>
-                        <span className="font-bold text-[#1E7A46]">{trace.rePlanSolver.status}</span>
+                        <span className="font-bold text-[#1E7A46]">{trace.rePlanSolver?.status ?? '—'}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-[#5B636E]">Solve Time:</span>
-                        <span className="font-bold text-[#1B1F24]">{trace.rePlanSolver.solveTimeSec}s</span>
+                        <span className="font-bold text-[#1B1F24]">{trace.rePlanSolver?.solveTimeSec ?? '—'}s</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-[#5B636E]">Seed:</span>
-                        <span className="text-[#1B1F24]">{trace.rePlanSolver.seed}</span>
+                        <span className="text-[#1B1F24]">{trace.rePlanSolver?.seed ?? '—'}</span>
                       </div>
                       <div className="pt-1 border-t border-[#D9DDE2] text-[10px]">
                         <span className="text-[#5B636E]">Hash: </span>
-                        <span className="text-slate-500 line-through">{trace.rePlanSolver.planHashBefore}</span>
-                        <span className="text-[#0F5FA8] font-bold"> → {trace.rePlanSolver.planHashAfter}</span>
+                        <span className="text-slate-500 line-through">{trace.rePlanSolver?.planHashBefore}</span>
+                        <span className="text-[#0F5FA8] font-bold"> → {trace.rePlanSolver?.planHashAfter}</span>
                       </div>
                     </div>
                   </div>

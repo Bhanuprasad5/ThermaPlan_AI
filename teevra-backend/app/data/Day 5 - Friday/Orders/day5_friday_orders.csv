@@ -1,46 +1,9 @@
 upload_batch_id,order_id,job_name,machine_id,station_id,routing_seq,duration_mins,duration_slots,kwh_per_op,restart_kwh,load_tag,splittable,due_slot,is_critical_melt
-BATCH_FRI_MED_05,ORD_MED_01,Medical Titanium Implants & Precision Micro-Machining - High Temp Primary Melt (Batch #01),FURNACE_1,FURNACE_BAY,1,180,12,490.8,120.4,fixed,False,33,True
-BATCH_FRI_MED_05,ORD_MED_02,Medical Titanium Implants & Precision Micro-Machining - Precision Ingot Continuous Pour (Batch #02),FURNACE_2,FURNACE_BAY,1,150,10,378.0,96.5,fixed,False,39,True
-BATCH_FRI_MED_05,ORD_MED_03,Medical Titanium Implants & Precision Micro-Machining - Billet Induction Pre-Heating (Batch #03),FURNACE_3,FURNACE_BAY,1,210,14,465.8,106.5,fixed,False,49,True
-BATCH_FRI_MED_05,ORD_MED_04,Pre-Sorted Scrap Staging & Charge Prep (Batch #04),CHARGING_BAY,FURNACE_BAY,1,120,8,110.6,15.4,fixed,False,37,False
-BATCH_FRI_MED_05,ORD_MED_05,Heavy Gantry Milling Rough Stage (Batch #05),CNC_1,CNC_BAY,2,180,12,192.6,19.7,fixed,False,68,False
-BATCH_FRI_MED_05,ORD_MED_06,5-Axis High-Tolerance Complex Contouring (Batch #06),CNC_2,CNC_BAY,3,240,16,224.5,24.8,shiftable,False,83,False
-BATCH_FRI_MED_05,ORD_MED_07,Axial Journal High-Speed Lathe Turning (Batch #07),CNC_3,CNC_BAY,2,210,14,169.2,17.4,shiftable,False,72,False
-BATCH_FRI_MED_05,ORD_MED_08,Multitasking Complex Flange Pocketing (Batch #08),CNC_4,CNC_BAY,2,180,12,160.1,15.2,shiftable,False,87,False
-BATCH_FRI_MED_05,ORD_MED_09,Micro-Precision Diamond Honing & Deburr (Batch #09),CNC_5,CNC_BAY,3,120,8,94.5,9.9,shiftable,False,94,False
-BATCH_FRI_MED_05,ORD_MED_10,Anti-Corrosive Thermal Barrier Coating (Batch #10),PAINT_BOOTH,PAINT_SHOP,4,180,12,249.7,30.2,shiftable,False,96,False
-BATCH_FRI_MED_05,ORD_MED_11,Infrared Epoxy Powder Polymerization (Batch #11),OVEN_2,PAINT_SHOP,4,210,14,279.3,34.7,shiftable,False,106,False
-BATCH_FRI_MED_05,ORD_MED_12,Controlled Atmosphere Vacuum Quench & Temper (Batch #12),HEAT_TREAT_1,OVEN_BAY,5,270,18,387.3,51.1,shiftable,False,121,False
-BATCH_FRI_MED_05,ORD_MED_13,Robotic High-Torque Sub-Assembly Staging (Batch #13),ASSEMBLY_1,ASSEMBLY_BAY,6,150,10,43.8,8.0,fixed,False,135,False
-BATCH_FRI_MED_05,ORD_MED_14,Final Structural Bolting & Fastener Torqueing (Batch #14),ASSEMBLY_2,ASSEMBLY_BAY,6,180,12,56.5,10.4,fixed,False,142,False
-BATCH_FRI_MED_05,ORD_MED_15,Laser CMM Micron Scan & NDT Ultrasonic Check (Batch #15),QUALITY_INSPECT,QUALITY_BAY,7,90,6,29.6,5.0,shiftable,False,150,False
-BATCH_FRI_MED_05,ORD_MED_16,Central Glycol Chiller Thermal Pre-Cooling (Batch #16),CHILLER_1,UTILITY_ROOM,1,240,16,209.0,9.5,interruptible,True,162,False
-BATCH_FRI_MED_05,ORD_MED_17,Medical Titanium Implants & Precision Micro-Machining - High Temp Primary Melt (Batch #17),FURNACE_1,FURNACE_BAY,1,180,12,484.6,120.2,fixed,False,84,True
-BATCH_FRI_MED_05,ORD_MED_18,Medical Titanium Implants & Precision Micro-Machining - Precision Ingot Continuous Pour (Batch #18),FURNACE_2,FURNACE_BAY,1,150,10,370.8,99.6,fixed,False,88,True
-BATCH_FRI_MED_05,ORD_MED_19,Medical Titanium Implants & Precision Micro-Machining - Billet Induction Pre-Heating (Batch #19),FURNACE_3,FURNACE_BAY,1,210,14,476.4,104.7,fixed,False,91,True
-BATCH_FRI_MED_05,ORD_MED_20,Pre-Sorted Scrap Staging & Charge Prep (Batch #20),CHARGING_BAY,FURNACE_BAY,1,120,8,113.5,15.6,fixed,False,85,False
-BATCH_FRI_MED_05,ORD_MED_21,Heavy Gantry Milling Rough Stage (Batch #21),CNC_1,CNC_BAY,2,180,12,191.1,20.9,fixed,False,112,False
-BATCH_FRI_MED_05,ORD_MED_22,5-Axis High-Tolerance Complex Contouring (Batch #22),CNC_2,CNC_BAY,3,240,16,211.1,24.9,shiftable,False,126,False
-BATCH_FRI_MED_05,ORD_MED_23,Axial Journal High-Speed Lathe Turning (Batch #23),CNC_3,CNC_BAY,2,210,14,168.7,17.8,shiftable,False,121,False
-BATCH_FRI_MED_05,ORD_MED_24,Multitasking Complex Flange Pocketing (Batch #24),CNC_4,CNC_BAY,2,180,12,156.0,14.6,shiftable,False,138,False
-BATCH_FRI_MED_05,ORD_MED_25,Micro-Precision Diamond Honing & Deburr (Batch #25),CNC_5,CNC_BAY,3,120,8,86.3,9.9,shiftable,False,138,False
-BATCH_FRI_MED_05,ORD_MED_26,Anti-Corrosive Thermal Barrier Coating (Batch #26),PAINT_BOOTH,PAINT_SHOP,4,180,12,245.6,30.7,shiftable,False,142,False
-BATCH_FRI_MED_05,ORD_MED_27,Infrared Epoxy Powder Polymerization (Batch #27),OVEN_2,PAINT_SHOP,4,210,14,269.5,35.0,shiftable,False,161,False
-BATCH_FRI_MED_05,ORD_MED_28,Controlled Atmosphere Vacuum Quench & Temper (Batch #28),HEAT_TREAT_1,OVEN_BAY,5,270,18,397.9,51.6,shiftable,False,170,False
-BATCH_FRI_MED_05,ORD_MED_29,Robotic High-Torque Sub-Assembly Staging (Batch #29),ASSEMBLY_1,ASSEMBLY_BAY,6,150,10,45.4,7.8,fixed,False,175,False
-BATCH_FRI_MED_05,ORD_MED_30,Final Structural Bolting & Fastener Torqueing (Batch #30),ASSEMBLY_2,ASSEMBLY_BAY,6,180,12,56.7,9.9,fixed,False,191,False
-BATCH_FRI_MED_05,ORD_MED_31,Laser CMM Micron Scan & NDT Ultrasonic Check (Batch #31),QUALITY_INSPECT,QUALITY_BAY,7,90,6,28.7,5.1,shiftable,False,191,False
-BATCH_FRI_MED_05,ORD_MED_32,Central Glycol Chiller Thermal Pre-Cooling (Batch #32),CHILLER_1,UTILITY_ROOM,1,240,16,228.4,9.9,interruptible,True,191,False
-BATCH_FRI_MED_05,ORD_MED_33,Medical Titanium Implants & Precision Micro-Machining - High Temp Primary Melt (Batch #33),FURNACE_1,FURNACE_BAY,1,180,12,497.7,116.7,fixed,False,129,True
-BATCH_FRI_MED_05,ORD_MED_34,Medical Titanium Implants & Precision Micro-Machining - Precision Ingot Continuous Pour (Batch #34),FURNACE_2,FURNACE_BAY,1,150,10,403.6,99.1,fixed,False,142,True
-BATCH_FRI_MED_05,ORD_MED_35,Medical Titanium Implants & Precision Micro-Machining - Billet Induction Pre-Heating (Batch #35),FURNACE_3,FURNACE_BAY,1,210,14,472.8,108.7,fixed,False,146,True
-BATCH_FRI_MED_05,ORD_MED_36,Pre-Sorted Scrap Staging & Charge Prep (Batch #36),CHARGING_BAY,FURNACE_BAY,1,120,8,110.3,14.7,fixed,False,126,False
-BATCH_FRI_MED_05,ORD_MED_37,Heavy Gantry Milling Rough Stage (Batch #37),CNC_1,CNC_BAY,2,180,12,183.3,20.0,fixed,False,161,False
-BATCH_FRI_MED_05,ORD_MED_38,5-Axis High-Tolerance Complex Contouring (Batch #38),CNC_2,CNC_BAY,3,240,16,212.4,25.4,shiftable,False,175,False
-BATCH_FRI_MED_05,ORD_MED_39,Axial Journal High-Speed Lathe Turning (Batch #39),CNC_3,CNC_BAY,2,210,14,183.2,18.5,shiftable,False,173,False
-BATCH_FRI_MED_05,ORD_MED_40,Multitasking Complex Flange Pocketing (Batch #40),CNC_4,CNC_BAY,2,180,12,160.1,14.6,shiftable,False,186,False
-BATCH_FRI_MED_05,ORD_MED_41,Micro-Precision Diamond Honing & Deburr (Batch #41),CNC_5,CNC_BAY,3,120,8,92.6,9.6,shiftable,False,186,False
-BATCH_FRI_MED_05,ORD_MED_42,Anti-Corrosive Thermal Barrier Coating (Batch #42),PAINT_BOOTH,PAINT_SHOP,4,180,12,230.0,30.2,shiftable,False,191,False
-BATCH_FRI_MED_05,ORD_MED_43,Infrared Epoxy Powder Polymerization (Batch #43),OVEN_2,PAINT_SHOP,4,210,14,271.3,34.2,shiftable,False,191,False
-BATCH_FRI_MED_05,ORD_MED_44,Controlled Atmosphere Vacuum Quench & Temper (Batch #44),HEAT_TREAT_1,OVEN_BAY,5,270,18,390.1,51.4,shiftable,False,191,False
-BATCH_FRI_MED_05,ORD_MED_45,Robotic High-Torque Sub-Assembly Staging (Batch #45),ASSEMBLY_1,ASSEMBLY_BAY,6,150,10,46.2,8.0,fixed,False,191,False
+BATCH_FRI,FRI-01,Valve body melt (rush),FURNACE_1,FURNACE_BAY,1,360,24,360,12,fixed,False,87,True
+BATCH_FRI,FRI-02,Valve body melt,FURNACE_1,FURNACE_BAY,1,360,24,360,12,fixed,False,191,True
+BATCH_FRI,FRI-03,Seat machining (rush),CNC_1,CNC_BAY,1,120,8,80,4,shiftable,False,47,False
+BATCH_FRI,FRI-04,Stem machining (rush),CNC_2,CNC_BAY,1,120,8,80,4,shiftable,False,47,False
+BATCH_FRI,FRI-05,Bonnet machining,CNC_3,CNC_BAY,1,120,8,80,4,shiftable,False,191,False
+BATCH_FRI,FRI-06,Paint cure,OVEN_1,OVEN_1,1,120,8,80,4,shiftable,False,191,False
+BATCH_FRI,FRI-07,Ice bank charge,CHILLER_1,CHILLER_1,1,240,16,120,15,interruptible,True,191,False
+BATCH_FRI,FRI-08,Compressed air,COMP_1,COMP_1,1,180,12,90,4,shiftable,False,191,False

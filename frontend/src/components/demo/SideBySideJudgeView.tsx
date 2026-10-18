@@ -82,7 +82,7 @@ export const SideBySideJudgeView: React.FC = () => {
           </button>
 
           <button
-            onClick={loadDemoPlant}
+            onClick={() => loadDemoPlant()}
             className="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300"
             title="Reset to pristine morning state"
           >

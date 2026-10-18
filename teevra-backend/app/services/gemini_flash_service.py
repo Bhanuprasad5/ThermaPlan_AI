@@ -25,28 +25,19 @@ logger = structlog.get_logger(__name__)
 # Official Grounded Citations
 OFFICIAL_CITATIONS: list[CitationItem] = [
     CitationItem(
-        source_title="TGSPDCL FY2025-26 Retail Supply Tariff Order",
-        clause="Clause 4.2b: Solar Hours Concession",
-        uri="gs://thermaplan-ai-teevra-uploads/citations/TGSPDCL_FY26_Tariff_Order.pdf",
-        snippet="HT-I Industrial consumers shall receive a 20% concession on the base energy charge (₹7.50 down to ₹6.00/kWh) between 10:00 hrs and 16:00 hrs to incentivize solar consumption.",
+        source_title="Illustrative time-of-day tariff (simulated)",
+        clause="Solar, normal and peak bands",
+        snippet="Solar 10:00–16:00 ₹6.00/kWh, normal ₹7.50/kWh, peak 18:00–22:00 ₹9.00/kWh. Modelled on TGSPDCL ToD structure; not a quoted tariff order.",
     ),
     CitationItem(
-        source_title="TGSPDCL FY2025-26 Retail Supply Tariff Order",
-        clause="Clause 4.2c: Peak Hours Demand Surcharge",
-        uri="gs://thermaplan-ai-teevra-uploads/citations/TGSPDCL_FY26_Tariff_Order.pdf",
-        snippet="Energy consumption between 18:00 hrs and 22:00 hrs carries a 20% surcharge (₹7.50 up to ₹9.00/kWh).",
+        source_title="ISO 7243:2017 Ergonomics of the thermal environment",
+        clause="Annex A, Table A.1: WBGT reference values",
+        snippet="Reference WBGT for acclimatised workers: about 33°C at rest, 30°C low, 28°C moderate, 26°C high metabolic rate. A screening value above the reference triggers further assessment.",
     ),
     CitationItem(
-        source_title="ISO 7243:2017 Ergonomics of the Thermal Environment",
-        clause="Table A.1: Reference Limits for Metabolic Rates",
-        uri="gs://thermaplan-ai-teevra-uploads/citations/ISO_7243_2017_Standard_Summary.pdf",
-        snippet="For high metabolic rate work (Class 3, 415W, e.g. heavy casting & furnace tending), the maximum WBGT threshold is 26.0°C for acclimatised personnel.",
-    ),
-    CitationItem(
-        source_title="CEA CO2 Baseline Database for the Indian Power Sector v20.0",
-        clause="National Weighted Average Grid Emission Factor",
-        uri="gs://thermaplan-ai-teevra-uploads/citations/CEA_Baseline_Database_v20.pdf",
-        snippet="The national average grid emission factor is established at 0.716 tCO2/MWh (Dec 2024).",
+        source_title="CEA CO2 Baseline Database for the Indian Power Sector, v22",
+        clause="Weighted average grid emission factor",
+        snippet="0.675 tCO2/MWh. Moving load in time at a single average factor does not change CO2, so no CO2 saving is claimed for time-shifting.",
     ),
 ]
 
@@ -110,63 +101,77 @@ class GeminiFlashService:
         baseline_kpi: KPISummary | None,
         heat_buffer_count: int,
         trigger_type: str,
+        summary: str = "",
+        move_reasons: list[str] | None = None,
+        timeout_sec: float = 15.0,
     ) -> dict[str, Any]:
         """
-        Generates an authoritative, plain-English summary around EXACT deterministic numbers.
-        Strict rule: The model receives the numbers as facts and is instructed never to alter them.
+        Plain-English summary around the solver's numbers. Gemini only rewords facts it is given;
+        if it is unavailable the deterministic summary is used and the trace says so.
         """
-        cost_savings = kpi.cost_savings_inr
-        co2_t = kpi.co2_saved_tco2
-        kwh = kpi.total_kwh
-        output_pct = kpi.output_percentage
-        honest_banner = kpi.honest_co2_banner
-
-        prompt = (
-            f"You are the Chief Industrial Engineer at Telangana Heavy Metal Works. "
-            f"Summarize the newly solved schedule for plant executives.\n"
-            f"Context:\n"
-            f"- Trigger Type: {trigger_type}\n"
-            f"- Total Cost: ₹{kpi.total_cost_inr:,.2f} (Savings vs baseline: ₹{cost_savings:,.2f})\n"
-            f"- Heat Breaches: {kpi.heat_breaches_count} (Baseline had {baseline_kpi.heat_breaches_count if baseline_kpi else 4} breaches)\n"
-            f"- Total Energy: {kwh:,.1f} kWh\n"
-            f"- Factory Output: {output_pct:.1f}%\n"
-            f"- Pre-allocated Heat Buffers: {heat_buffer_count} windows in peak afternoon thermal hours\n"
-            f"- Honest Carbon Rule: '{honest_banner}'\n"
-            f"Ground your explanation strictly in TGSPDCL ToD Clause 4.2b and ISO 7243:2017 limits."
+        facts = summary or (
+            f"Bill ₹{kpi.total_cost_inr:,.0f}; saves ₹{kpi.cost_savings_inr:,.0f}; "
+            f"heat-breach slots {kpi.heat_breaches_count}; output {kpi.output_percentage:g}%."
         )
+        moves = "\n".join(f"- {r}" for r in (move_reasons or [])[:10])
+        prompt = (
+            "You write a three-sentence note for a factory shift manager about tomorrow's production plan.\n"
+            "Use only the facts below. Do not add, round or invent any number, rule or clause.\n"
+            "Sentence 1: what the plan saves. Sentence 2: how it keeps crews out of unsafe heat. "
+            "Sentence 3: one honest caveat about energy or CO2.\n\n"
+            f"Trigger: {trigger_type}\n"
+            f"Facts: {facts}\n"
+            f"CO2 note: {kpi.honest_co2_banner}\n"
+            f"Job moves:\n{moves}\n"
+        )
+        template = f"{facts} {kpi.honest_co2_banner}"
 
         if self.container.is_cloud_connected and self.container.genai_client:
+            import asyncio
+            import time
+
+            started = time.perf_counter()
             try:
-                import asyncio
                 response = await asyncio.wait_for(
                     asyncio.to_thread(
                         self.container.genai_client.models.generate_content,
                         model=self.settings.GEMINI_FLASH_MODEL,
                         contents=prompt,
                     ),
-                    timeout=8.0,
+                    timeout=timeout_sec,
                 )
-                text = response.text.strip()
-                return {"explanation": text, "citations": OFFICIAL_CITATIONS}
+                usage = getattr(response, "usage_metadata", None)
+                return {
+                    "explanation": (response.text or "").strip() or template,
+                    "citations": OFFICIAL_CITATIONS,
+                    "trace": {
+                        "source": "gemini",
+                        "model": self.settings.GEMINI_FLASH_MODEL,
+                        "model_version": getattr(response, "model_version", None),
+                        "region": self.settings.VERTEX_REGION,
+                        "latency_ms": int((time.perf_counter() - started) * 1000),
+                        "prompt_tokens": getattr(usage, "prompt_token_count", None),
+                        "output_tokens": getattr(usage, "candidates_token_count", None),
+                    },
+                }
             except Exception as e:
-                logger.warning(
-                    "gemini_explanation_failed_using_deterministic_template",
-                    error=str(e),
-                )
+                logger.warning("gemini_explanation_failed_using_template", error=str(e))
+                return {
+                    "explanation": template,
+                    "citations": OFFICIAL_CITATIONS,
+                    "trace": {
+                        "source": "template",
+                        "model": self.settings.GEMINI_FLASH_MODEL,
+                        "latency_ms": int((time.perf_counter() - started) * 1000),
+                        "error": type(e).__name__,
+                    },
+                }
 
-        # Deterministic grounded explanation template
-        explanation = (
-            f"The Heat-Safe & Carbon-Aware schedule has been optimized across all 192 slots. "
-            f"By mathematically enforcing ISO 7243:2017 Table A.1 thermal thresholds, manual Class 3 furnace operations "
-            f"were shifted into cool morning hours, eliminating all {baseline_kpi.heat_breaches_count if baseline_kpi else 4} heat breaches. "
-            f"Simultaneously, interruptible chiller and automated oven loads were shifted into the 10:00–16:00 solar window, "
-            f"capturing the 20% TGSPDCL tariff concession (Clause 4.2b) and yielding ₹{cost_savings:,.2f} in electricity bill savings "
-            f"while maintaining {output_pct:.1f}% plant throughput. "
-            f"{heat_buffer_count} dedicated Heat Buffers were reserved to absorb worker rests without line stoppages. "
-            f"Note on emissions: {honest_banner}"
-        )
-
-        return {"explanation": explanation, "citations": OFFICIAL_CITATIONS}
+        return {
+            "explanation": template,
+            "citations": OFFICIAL_CITATIONS,
+            "trace": {"source": "template", "error": "Gemini not configured"},
+        }
 
 
 # Global singleton instance

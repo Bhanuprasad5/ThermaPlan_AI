@@ -62,7 +62,7 @@ app.add_middleware(
         "https://thermaplan-ai.web.app",
         "https://thermaplan-ai.firebaseapp.com",
     ],
-    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?|https://thermaplan-ai\.(web\.app|firebaseapp\.com)",
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?|https://thermaplan-ai\.(web\.app|firebaseapp\.com)\.?",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -81,16 +81,28 @@ async def root():
     return {
         "service": "TEEVRA Heat-Safe Carbon-Aware Production Scheduler",
         "status": "OPERATIONAL",
-        "jurisdiction": "Telangana (TGSPDCL HT-I & CEA v20.0)",
-        "thermal_standard": "ISO 7243:2017 Table A.1",
-        "solver": "Google OR-Tools CP-SAT (192-Slot)",
+        "tariff": "Illustrative time-of-day tariff (simulated, TGSPDCL-style bands)",
+        "carbon_factor": "CEA v22, 0.675 tCO2/MWh",
+        "thermal_standard": "ISO 7243:2017 Annex A, Table A.1",
+        "solver": "Google OR-Tools CP-SAT, seed 42, single worker",
         "docs_url": "/docs",
     }
 
 
 @app.get("/healthz", tags=["Health"])
+@app.get("/health", tags=["Health"])
 async def health_check():
-    return {"status": "HEALTHY"}
+    from app.services.run_history import run_history
+
+    settings = get_settings()
+    active = run_history.active
+    return {
+        "status": "HEALTHY",
+        "model": settings.GEMINI_FLASH_MODEL,
+        "vertex_region": settings.VERTEX_REGION,
+        "active_plan_id": active.plan.plan_id if active else None,
+        "runs_in_memory": len(run_history.runs),
+    }
 
 
 @app.get("/readyz", tags=["Health"])

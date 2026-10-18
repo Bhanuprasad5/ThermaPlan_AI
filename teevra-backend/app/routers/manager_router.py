@@ -6,12 +6,14 @@ Manager Router (Feature 1 & Feature 2):
 - Compare financial, energy, carbon, and thermal KPIs
 """
 
+import asyncio
 import io
 from datetime import datetime, UTC
 from pathlib import Path
 
 import pandas as pd
-from fastapi import APIRouter, File, Form, UploadFile, HTTPException
+import structlog
+from fastapi import APIRouter, BackgroundTasks, File, Form, UploadFile, HTTPException
 
 from app.core_math.ortools_solver import solve_dual_schedules
 from app.models.constraints import ExtractedPlantConstraints
@@ -21,23 +23,26 @@ from app.models.domain import (
     PlanningConfigRequest,
     VALID_SLOT_MINUTES,
 )
-from app.models.schedule import SchedulePlanResponse
+from app.models.schedule import ExplanationTrace, SchedulePlanResponse
 from app.services.bigquery_service import bq_service
 from app.services.firestore_fcm_service import firestore_fcm_service
-from app.services.gemini_flash_service import gemini_flash_service
+from app.services.gemini_flash_service import OFFICIAL_CITATIONS, gemini_flash_service
 from app.services.storage_service import storage_service
+from app.services.run_history import ActiveContext, run_history
 from app.services.weather_integrator import weather_integrator
 
+logger = structlog.get_logger(__name__)
 router = APIRouter(prefix="/api/v1/manager", tags=["Manager Core Scheduler"])
 
 CURRENT_ACTIVE_ROSTERS: list[WorkstationRoster] = []
 CURRENT_ACTIVE_WORKERS: list[dict] = []
+LAST_UPLOADED_ORDERS: list[PlantOrder] = []
 
 _DATA_ROOT = Path(__file__).resolve().parent.parent / "data"
 _DAY_PACKAGES = [
     {
         "day_id": "day1_monday",
-        "label": "Day 1 — Monday (Aerospace & Defense melt)",
+        "label": "Monday: Castings",
         "folder": "Day 1 - Monday",
         "orders": "day1_monday_orders.csv",
         "roster": "day1_monday_workers_roster_260.csv",
@@ -45,7 +50,7 @@ _DAY_PACKAGES = [
     },
     {
         "day_id": "day2_tuesday",
-        "label": "Day 2 — Tuesday (EV powertrain)",
+        "label": "Tuesday: Housings",
         "folder": "Day 2 - Tuesday",
         "orders": "day2_tuesday_orders.csv",
         "roster": "day2_tuesday_workers_roster_255.csv",
@@ -53,7 +58,7 @@ _DAY_PACKAGES = [
     },
     {
         "day_id": "day3_wednesday",
-        "label": "Day 3 — Wednesday (Railways bogie & axles)",
+        "label": "Wednesday: Gearbox",
         "folder": "Day 3 - Wednesday",
         "orders": "day3_wednesday_orders.csv",
         "roster": "day3_wednesday_workers_roster_265.csv",
@@ -61,7 +66,7 @@ _DAY_PACKAGES = [
     },
     {
         "day_id": "day4_thursday",
-        "label": "Day 4 — Thursday (Wind turbine gears)",
+        "label": "Thursday: Pump bodies",
         "folder": "Day 4 - Thursday",
         "orders": "day4_thursday_orders.csv",
         "roster": "day4_thursday_workers_roster_258.csv",
@@ -69,13 +74,73 @@ _DAY_PACKAGES = [
     },
     {
         "day_id": "day5_friday",
-        "label": "Day 5 — Friday (Orthopedic titanium)",
+        "label": "Friday: Valve blocks",
         "folder": "Day 5 - Friday",
         "orders": "day5_friday_orders.csv",
         "roster": "day5_friday_workers_roster_270.csv",
         "tariff": "day5_friday_tgspdcl_tariff.csv",
     },
 ]
+
+
+DAY_ORDER_FILES = {pkg["day_id"]: (pkg["folder"], pkg["orders"]) for pkg in _DAY_PACKAGES}
+
+
+def _day_label(day_id: str) -> str:
+    return next((p["label"] for p in _DAY_PACKAGES if p["day_id"] == day_id), day_id)
+
+
+_TRUE = {"true", "1", "yes", "y"}
+
+
+def parse_orders_csv(text: str) -> list[PlantOrder]:
+    """Strict parse of an orders CSV. A bad file is a 400, never a silent swap to demo data."""
+    try:
+        df = pd.read_csv(io.StringIO(text))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Orders file is not a readable CSV: {e}") from e
+    df.columns = [str(c).strip().lower() for c in df.columns]
+    missing = [c for c in ("order_id", "machine_id", "duration_mins", "kwh_per_op") if c not in df.columns]
+    if missing:
+        raise HTTPException(status_code=400, detail=f"Orders file is missing columns: {', '.join(missing)}")
+    if df.empty:
+        raise HTTPException(status_code=400, detail="Orders file has no rows.")
+
+    orders: list[PlantOrder] = []
+    for i, row in df.iterrows():
+        line = i + 2
+
+        def val(col, default=None):
+            v = row.get(col, default)
+            return default if v is None or (isinstance(v, float) and pd.isna(v)) else v
+
+        try:
+            machine_id = str(val("machine_id")).strip().upper()
+            duration_mins = int(float(val("duration_mins")))
+            tag = str(val("load_tag", "shiftable")).strip().lower()
+            orders.append(
+                PlantOrder(
+                    upload_batch_id=str(val("upload_batch_id", "manager_upload")),
+                    order_id=str(val("order_id")).strip(),
+                    job_name=str(val("job_name", val("order_id"))),
+                    machine_id=machine_id,
+                    station_id=str(val("station_id", f"st_{machine_id.lower()}")),
+                    routing_seq=int(float(val("routing_seq", 1))),
+                    duration_mins=duration_mins,
+                    duration_slots=int(float(val("duration_slots", max(1, duration_mins // 15)))),
+                    kwh_per_op=float(val("kwh_per_op")),
+                    restart_kwh=float(val("restart_kwh", 0.0)),
+                    load_tag=tag if tag in ("fixed", "shiftable", "interruptible") else "shiftable",
+                    splittable=str(val("splittable", "false")).strip().lower() in _TRUE,
+                    due_slot=int(float(val("due_slot", 191))),
+                    is_critical_melt=str(val("is_critical_melt", "false")).strip().lower() in _TRUE,
+                )
+            )
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Orders file row {line}: {e}") from e
+    return orders
 
 
 def _read_package_csv(folder: str, sub: str, filename: str) -> str:
@@ -391,7 +456,7 @@ def _load_default_orders() -> list[PlantOrder]:
             try:
                 df = pd.read_csv(p)
                 orders = [PlantOrder(**row.to_dict()) for _, row in df.iterrows()]
-                if len(orders) >= 10:
+                if orders:
                     return orders
             except Exception:
                 pass
@@ -419,22 +484,20 @@ async def upload_factory_files(
             orders_file, f"uploads/{batch_id}_{orders_file.filename}"
         )
         content = await orders_file.read()
-        try:
-            df = (
-                pd.read_csv(io.BytesIO(content))
-                if orders_file.filename.endswith(".csv")
-                else pd.read_excel(io.BytesIO(content))
-            )
-            for _, row in df.iterrows():
-                uploaded_orders.append(
-                    PlantOrder(upload_batch_id=batch_id, **row.to_dict())
-                )
-        except Exception:
-            uploaded_orders = DEFAULT_DEMO_ORDERS
+        if orders_file.filename.lower().endswith(".csv"):
+            text = content.decode("utf-8-sig", errors="replace")
+        else:
+            try:
+                text = pd.read_excel(io.BytesIO(content)).to_csv(index=False)
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=f"Orders spreadsheet could not be read: {e}") from e
+        uploaded_orders = parse_orders_csv(text)
     else:
         uploaded_orders = DEFAULT_DEMO_ORDERS
 
-    global CURRENT_ACTIVE_ROSTERS, CURRENT_ACTIVE_WORKERS
+    global CURRENT_ACTIVE_ROSTERS, CURRENT_ACTIVE_WORKERS, LAST_UPLOADED_ORDERS
+    if orders_file:
+        LAST_UPLOADED_ORDERS = uploaded_orders
     if roster_file:
         gs_uri, size = await storage_service.upload_file_stream(
             roster_file, f"uploads/{batch_id}_{roster_file.filename}"
@@ -590,14 +653,13 @@ async def get_planning_slots():
 
 
 @router.post("/solve-48h", response_model=SchedulePlanResponse)
-async def solve_morning_plan(config: PlanningConfigRequest | None = None):
+async def solve_morning_plan(
+    config: PlanningConfigRequest | None = None,
+    background_tasks: BackgroundTasks = None,  # type: ignore[assignment]
+):
     """
-    Executes CP-SAT Optimization with configurable time slots & planning horizon:
-    - Supported slot resolutions: 15m, 30m, 1h (60m), 1.5h (90m), 2h (120m), 2.5h (150m), 3h (180m).
-    - Supported horizons: 24h, 48h (default), 72h.
-    - Generates unconstrained Output-Only Baseline comparator.
-    - Generates Heat-Safe & Carbon-Aware Plan with zero heat breaches and pre-allocated heat buffers.
-    - Evaluates honest CEA carbon and TGSPDCL ToD electricity bill savings.
+    Solves the baseline (earliest start, no heat rule) and the heat-safe, tariff-aware plan.
+    Orders come from, in order: the CSV in the request, a named demo day, the last upload, the default book.
     """
     plan_config = config or PlanningConfigRequest()
     if plan_config.slot_duration_minutes not in VALID_SLOT_MINUTES:
@@ -606,161 +668,114 @@ async def solve_morning_plan(config: PlanningConfigRequest | None = None):
             detail=f"Invalid slot_duration_minutes {plan_config.slot_duration_minutes}. Must be one of: {VALID_SLOT_MINUTES}"
         )
 
-    orders: list[PlantOrder] = []
-    if plan_config.orders_csv and len(plan_config.orders_csv.strip()) > 0:
-        try:
-            df = pd.read_csv(io.StringIO(plan_config.orders_csv))
-            col_map = {str(c).strip().lower(): c for c in df.columns}
-            
-            def get_val(row, aliases, default=None):
-                for a in aliases:
-                    if a in col_map:
-                        v = row[col_map[a]]
-                        if pd.notna(v):
-                            return v
-                return default
-
-            for idx, row in df.iterrows():
-                order_id = str(get_val(row, ["order_id", "id", "order", "orderid"], f"ORD_{idx+1}"))
-                job_name = str(get_val(row, ["job_name", "job", "name", "jobname", "description"], f"Job #{order_id}"))
-                machine_id = str(get_val(row, ["machine_id", "machine", "machineid"], "CNC_1")).upper()
-                station_id = str(get_val(row, ["station_id", "station", "stationid", "station_name"], f"st_{machine_id.lower()}"))
-                
-                try:
-                    duration_mins = int(float(get_val(row, ["duration_mins", "duration", "mins", "duration_minutes"], 120)))
-                except (ValueError, TypeError):
-                    duration_mins = 120
-                    
-                try:
-                    duration_slots = int(float(get_val(row, ["duration_slots", "slots"], max(1, duration_mins // 15))))
-                except (ValueError, TypeError):
-                    duration_slots = max(1, duration_mins // 15)
-                    
-                try:
-                    kwh_per_op = float(get_val(row, ["kwh_per_op", "kwh", "kwh_op", "energy_kwh"], 100.0))
-                except (ValueError, TypeError):
-                    kwh_per_op = 100.0
-                    
-                try:
-                    restart_kwh = float(get_val(row, ["restart_kwh", "restart"], 10.0))
-                except (ValueError, TypeError):
-                    restart_kwh = 10.0
-                    
-                raw_tag = str(get_val(row, ["load_tag", "tag", "flexibility"], "shiftable")).lower()
-                load_tag = raw_tag if raw_tag in ["fixed", "shiftable", "interruptible"] else "shiftable"
-                splittable = str(get_val(row, ["splittable", "can_split"], "false")).lower() in ["true", "1", "yes"]
-                
-                try:
-                    due_slot = int(float(get_val(row, ["due_slot", "due"], 191)))
-                except (ValueError, TypeError):
-                    due_slot = 191
-                    
-                is_crit = str(get_val(row, ["is_critical_melt", "critical_melt", "critical", "is_critical"], "false")).lower() in ["true", "1", "yes"]
-                upload_batch = str(get_val(row, ["upload_batch_id", "batch_id", "batch"], "custom_manager_upload"))
-                
-                orders.append(PlantOrder(
-                    upload_batch_id=upload_batch,
-                    order_id=order_id,
-                    job_name=job_name,
-                    machine_id=machine_id,
-                    station_id=station_id,
-                    routing_seq=1,
-                    duration_mins=duration_mins,
-                    duration_slots=duration_slots,
-                    kwh_per_op=kwh_per_op,
-                    restart_kwh=restart_kwh,
-                    load_tag=load_tag,
-                    splittable=splittable,
-                    due_slot=due_slot,
-                    is_critical_melt=is_crit
-                ))
-        except Exception as e:
-            logger.warning(f"Failed parsing uploaded orders CSV: {e}")
-            orders = []
+    if plan_config.orders_csv and plan_config.orders_csv.strip():
+        orders = parse_orders_csv(plan_config.orders_csv)
+        label = plan_config.dataset_label or "Custom upload"
     elif plan_config.day_id:
-        day_dir_map = {
-            "day1_monday": ("Day 1 - Monday", "day1_monday_orders.csv"),
-            "day2_tuesday": ("Day 2 - Tuesday", "day2_tuesday_orders.csv"),
-            "day3_wednesday": ("Day 3 - Wednesday", "day3_wednesday_orders.csv"),
-            "day4_thursday": ("Day 4 - Thursday", "day4_thursday_orders.csv"),
-            "day5_friday": ("Day 5 - Friday", "day5_friday_orders.csv"),
-        }
-        if plan_config.day_id in day_dir_map:
-            folder, fname = day_dir_map[plan_config.day_id]
-            day_path = Path(__file__).resolve().parent.parent / "data" / folder / "Orders" / fname
-            if day_path.exists():
-                try:
-                    df = pd.read_csv(day_path)
-                    orders = [PlantOrder(**row.to_dict()) for _, row in df.iterrows()]
-                except Exception:
-                    orders = []
+        if plan_config.day_id not in DAY_ORDER_FILES:
+            raise HTTPException(status_code=404, detail=f"Unknown day_id {plan_config.day_id}")
+        folder, fname = DAY_ORDER_FILES[plan_config.day_id]
+        orders = parse_orders_csv((_DATA_ROOT / folder / "Orders" / fname).read_text(encoding="utf-8"))
+        label = plan_config.dataset_label or _day_label(plan_config.day_id)
+    elif LAST_UPLOADED_ORDERS:
+        orders, label = LAST_UPLOADED_ORDERS, plan_config.dataset_label or "Last upload"
+    else:
+        orders, label = DEFAULT_DEMO_ORDERS, _day_label("day1_monday")
 
-    if not orders:
-        orders = bq_service.get_plant_orders()
-    if not orders:
-        orders = DEFAULT_DEMO_ORDERS
-        bq_service.save_plant_orders(orders)
-
-    rosters = CURRENT_ACTIVE_ROSTERS if CURRENT_ACTIVE_ROSTERS else bq_service.get_workstation_roster()
-    if not rosters:
-        rosters = DEFAULT_DEMO_ROSTERS
-        bq_service.save_workstation_roster(rosters)
-
+    rosters = _heat_rosters_for(orders)
     weather_slots = await weather_integrator.fetch_48h_weather()
-    bq_service.save_weather_forecast_48h(weather_slots)
 
-    # Solve dual plans with user-configured slot resolution and horizon
-    baseline_plan, optimized_plan = solve_dual_schedules(
+    baseline_plan, optimized_plan = await asyncio.to_thread(
+        solve_dual_schedules,
         orders=orders,
         rosters=rosters,
         weather_slots=weather_slots,
         horizon_hours=plan_config.horizon_hours,
         slot_duration_minutes=plan_config.slot_duration_minutes,
     )
+    optimized_plan.dataset_label = label
+    optimized_plan.gemini_explanation_text = f"{optimized_plan.summary} {optimized_plan.kpi.honest_co2_banner}"
+    optimized_plan.citations = OFFICIAL_CITATIONS
 
-    # Generate grounded explanation strictly around calculated numbers
-    explanation_res = await gemini_flash_service.generate_plan_explanation(
-        kpi=optimized_plan.kpi,
-        baseline_kpi=baseline_plan.kpi,
-        heat_buffer_count=len(optimized_plan.heat_buffers),
-        trigger_type=f"MORNING_PLAN ({plan_config.slot_label} slots, {plan_config.horizon_hours}h horizon)",
-    )
-
-    optimized_plan.gemini_explanation_text = explanation_res["explanation"]
-    optimized_plan.citations = explanation_res["citations"]
-
-    # Persist in BigQuery and sync state to Firestore
-    bq_service.save_solved_schedule(optimized_plan)
-    for buf in optimized_plan.heat_buffers:
-        firestore_fcm_service.update_station_state(
-            buf.station_id,
-            {
-                "status": "HEAT_BUFFER_ACTIVE",
-                "buffer_capacity_mins": buf.remaining_capacity_minutes,
-            },
-        )
-
+    run_history.set_active(ActiveContext(optimized_plan, orders, rosters, weather_slots))
+    run_history.record(optimized_plan)
+    if background_tasks is not None:
+        background_tasks.add_task(_persist_plan, optimized_plan)
     return optimized_plan
 
 
+def _heat_rosters_for(orders: list[PlantOrder]) -> list[WorkstationRoster]:
+    """Every order station gets a heat profile. Uploaded rosters override the default one where ids match,
+    so a worker file keyed by machine id can never leave a bay without its heat rule."""
+    by_station = {r.station_id: r for r in DEFAULT_DEMO_ROSTERS}
+    by_station.update({r.station_id: r for r in CURRENT_ACTIVE_ROSTERS})
+    missing = sorted({o.station_id for o in orders} - set(by_station))
+    if missing:
+        raise HTTPException(
+            status_code=400,
+            detail=f"No heat profile for station(s) {', '.join(missing)}. Use one of: {', '.join(sorted(by_station))}",
+        )
+    return list(by_station.values())
+
+
+def _persist_plan(plan: SchedulePlanResponse) -> None:
+    """Best-effort audit copy. The response never waits on BigQuery or Firestore."""
+    try:
+        bq_service.save_solved_schedule(plan)
+        for buf in plan.heat_buffers:
+            firestore_fcm_service.update_station_state(
+                buf.station_id,
+                {"status": "HEAT_BUFFER_ACTIVE", "buffer_capacity_mins": buf.remaining_capacity_minutes},
+            )
+    except Exception as e:
+        logger.warning("plan_persist_failed", error=str(e))
+
+
 @router.get("/active-plan", response_model=SchedulePlanResponse)
-async def get_active_plan():
-    """Fetches the latest active 48-hour schedule plan."""
-    plan = bq_service.get_latest_solved_schedule()
-    if not plan:
-        # Generate on the fly if none exists
-        return await solve_morning_plan()
-    return plan
+async def get_active_plan(background_tasks: BackgroundTasks):
+    """The plan most recently solved by this service, or a fresh solve of the default day."""
+    if run_history.active:
+        return run_history.active.plan
+    return await solve_morning_plan(None, background_tasks)
 
 
 @router.get("/morning-plan", response_model=SchedulePlanResponse)
-async def get_morning_plan():
+async def get_morning_plan(background_tasks: BackgroundTasks):
     """Frontend compatibility endpoint for morning plan."""
-    return await get_active_plan()
+    return await get_active_plan(background_tasks)
+
+
+@router.post("/explain")
+async def explain_active_plan():
+    """Gemini rewords the active plan's own facts into a short note. Called after the plan is on screen."""
+    ctx = run_history.active
+    if ctx is None:
+        raise HTTPException(status_code=409, detail="No plan is active yet.")
+    plan = ctx.plan
+    res = await gemini_flash_service.generate_plan_explanation(
+        kpi=plan.kpi,
+        baseline_kpi=plan.baseline_kpi,
+        heat_buffer_count=len(plan.heat_buffers),
+        trigger_type="Breakdown replan" if plan.trigger_type == "MACHINE_BREAKDOWN" else "Morning plan",
+        summary=plan.summary,
+        move_reasons=[f"{m.job_name}: {m.reason}" for m in plan.job_moves if m.kind != "unchanged"],
+        timeout_sec=45.0,
+    )
+    trace = ExplanationTrace(**res["trace"])
+    if run_history.active is ctx:
+        plan.gemini_explanation_text = res["explanation"]
+        plan.explanation_trace = trace
+    return {"plan_id": plan.plan_id, "text": res["explanation"], "trace": trace}
+
+
+@router.get("/evals/summary")
+async def get_evals_summary():
+    """Average baseline vs optimized KPIs over every morning-plan solve recorded so far."""
+    return await asyncio.to_thread(run_history.summary)
 
 
 @router.post("/approve-and-solve", response_model=SchedulePlanResponse)
-async def approve_and_solve(constraints: dict | None = None):
+async def approve_and_solve(background_tasks: BackgroundTasks, constraints: dict | None = None):
     """Frontend compatibility endpoint for approving parsed rules and solving."""
     c = constraints or {}
     cfg = PlanningConfigRequest(
@@ -768,8 +783,9 @@ async def approve_and_solve(constraints: dict | None = None):
         slot_duration_minutes=c.get("slot_duration_minutes", 15),
         orders_csv=c.get("orders_csv"),
         day_id=c.get("day_id"),
+        dataset_label=c.get("dataset_label"),
     )
-    return await solve_morning_plan(cfg)
+    return await solve_morning_plan(cfg, background_tasks)
 
 
 def _illustrative_tariff_periods() -> list[dict]:

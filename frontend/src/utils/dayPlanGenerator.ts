@@ -168,7 +168,6 @@ export function generatePlanForDay(dayId?: string | any, customCsv?: string, cus
       isCached: true,
       recordedDate: 'Oct 18, 2026',
     },
-    status: 'pending',
   };
 
   return {

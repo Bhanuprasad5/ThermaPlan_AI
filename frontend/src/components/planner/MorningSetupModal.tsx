@@ -21,11 +21,136 @@ import {
   Zap,
   Calendar,
   CheckCircle,
+  XCircle,
+  AlertTriangle,
 } from 'lucide-react';
 import { usePlant } from '../../context/PlantContext';
 import { parseRules, listAvailableTemplates, loadAvailableTemplate } from '../../services/managerApi';
 import { CACHED_RULE_RESULT } from '../../services/geminiService';
 import { Worker } from '../../types';
+import { UPLOAD_SCHEMAS, UploadCheck, UploadKind, formatRows, validateUpload } from '../../utils/uploadValidation';
+
+const ISSUE_PREVIEW_LIMIT = 4;
+
+const isTrue = (v: string | undefined) => ['true', '1', 'yes'].includes((v ?? '').trim().toLowerCase());
+
+function checkStatusText(check: UploadCheck | null, fallback: string): string {
+  if (!check) return fallback;
+  if (check.status === 'reference') return '✓ Reference document attached';
+  if (check.status === 'valid') return `✓ Checks passed · ${check.rowCount} rows`;
+  return `✕ ${check.problemCount} ${check.problemCount === 1 ? 'problem' : 'problems'} found, see below`;
+}
+
+const RequiredColumns: React.FC<{ kind: UploadKind }> = ({ kind }) => {
+  const schema = UPLOAD_SCHEMAS[kind];
+  return (
+    <details className="text-[10px] text-[#5B636E] group">
+      <summary className="cursor-pointer select-none font-semibold text-[#0F5FA8] hover:underline">
+        Required columns ({schema.mandatory.length})
+      </summary>
+      <ul className="mt-1.5 space-y-0.5">
+        {schema.mandatory.map((c) => (
+          <li key={c.name}>
+            <code className="font-mono text-[#1B1F24]">{c.name}</code> — {c.description}
+          </li>
+        ))}
+      </ul>
+    </details>
+  );
+};
+
+const UploadCheckPanel: React.FC<{ checks: Array<UploadCheck | null> }> = ({ checks }) => {
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const failing = checks.filter((c): c is UploadCheck => Boolean(c && c.status === 'invalid'));
+  if (failing.length === 0) return null;
+  const total = failing.reduce((sum, c) => sum + c.problemCount, 0);
+
+  return (
+    <div className="border border-red-200 rounded-lg bg-white overflow-hidden" role="alert" aria-label="Upload check results">
+      <div className="px-4 py-2.5 bg-red-50 border-b border-red-200 flex items-center justify-between gap-3">
+        <span className="font-bold text-red-800 flex items-center gap-1.5">
+          <XCircle size={15} />
+          <span>Upload check: {failing.length === 1 ? '1 file needs' : `${failing.length} files need`} attention</span>
+        </span>
+        <span className="text-[11px] text-red-700">
+          {total} {total === 1 ? 'problem' : 'problems'} to fix. Correct the file, then upload it again.
+        </span>
+      </div>
+      <div className="divide-y divide-[#D9DDE2]">
+        {failing.map((check) => {
+          const schema = UPLOAD_SCHEMAS[check.kind];
+          const showAll = expanded[check.kind];
+          const issues = showAll ? check.issues : check.issues.slice(0, ISSUE_PREVIEW_LIMIT);
+          const describe = (name: string) => schema.mandatory.find((c) => c.name === name)?.description ?? '';
+          return (
+            <div key={check.kind} className="px-4 py-3 space-y-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-bold text-[#1B1F24]">
+                  {schema.title} <span className="font-mono font-normal text-[#5B636E]">· {check.fileName}</span>
+                </span>
+                <span className="text-[10px] font-bold bg-red-100 text-red-700 px-1.5 py-0.5 rounded">
+                  {check.problemCount} {check.problemCount === 1 ? 'problem' : 'problems'}
+                </span>
+              </div>
+
+              {check.fileErrors.map((msg) => (
+                <p key={msg} className="text-[11px] text-red-800 flex items-start gap-1.5">
+                  <AlertCircle size={13} className="shrink-0 mt-px" />
+                  <span>{msg}</span>
+                </p>
+              ))}
+
+              {check.missingColumns.length > 0 && (
+                <div className="space-y-1.5">
+                  <p className="text-[11px] font-semibold text-[#1B1F24]">
+                    You are missing {check.missingColumns.length === 1 ? 'this mandatory column' : `these ${check.missingColumns.length} mandatory columns`}:
+                  </p>
+                  <ul className="grid grid-cols-1 md:grid-cols-2 gap-1">
+                    {check.missingColumns.map((name) => {
+                      const hint = check.renameHints.find((h) => h.expected === name);
+                      return (
+                        <li key={name} className="flex items-start gap-1.5 text-[11px]">
+                          <code className="shrink-0 font-mono font-bold text-red-700 bg-red-50 border border-red-200 px-1.5 py-px rounded">{name}</code>
+                          <span className="text-[#5B636E] leading-snug">
+                            {hint ? <>Found <code className="font-mono text-[#1B1F24]">"{hint.found}"</code>; rename it to <code className="font-mono text-[#1B1F24]">{name}</code>.</> : describe(name)}
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
+
+              {check.issues.length > 0 && (
+                <div className="space-y-1.5">
+                  <p className="text-[11px] font-semibold text-[#1B1F24]">Fix these values (row numbers match your spreadsheet, header is row 1):</p>
+                  <ul className="space-y-1">
+                    {issues.map((issue) => (
+                      <li key={`${issue.column}|${issue.problem}`} className="text-[11px] flex flex-wrap items-baseline gap-x-1.5">
+                        <code className="font-mono font-bold text-[#1B1F24]">{issue.column}</code>
+                        <span className="text-red-800">{issue.problem}</span>
+                        <span className="text-[#5B636E]">— {formatRows(issue.rows)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  {check.issues.length > ISSUE_PREVIEW_LIMIT && (
+                    <button
+                      type="button"
+                      onClick={() => setExpanded((prev) => ({ ...prev, [check.kind]: !showAll }))}
+                      className="text-[11px] font-semibold text-[#0F5FA8] hover:underline cursor-pointer"
+                    >
+                      {showAll ? 'Show fewer' : `Show ${check.issues.length - ISSUE_PREVIEW_LIMIT} more`}
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
 export const MorningSetupModal: React.FC = () => {
   const {
@@ -54,8 +179,13 @@ export const MorningSetupModal: React.FC = () => {
   const [templateError, setTemplateError] = useState('');
   const [tariffFileName, setTariffFileName] = useState('');
   const [solveError, setSolveError] = useState('');
+  const [ordersCheck, setOrdersCheck] = useState<UploadCheck | null>(null);
+  const [rosterCheck, setRosterCheck] = useState<UploadCheck | null>(null);
+  const [tariffCheck, setTariffCheck] = useState<UploadCheck | null>(null);
 
-  const plantFilesReady = Boolean(selectedFileName && selectedWorkerFileName);
+  const uploadChecks = [ordersCheck, rosterCheck, tariffCheck];
+  const problemCount = uploadChecks.reduce((sum, c) => sum + (c?.status === 'invalid' ? c.problemCount : 0), 0);
+  const plantFilesReady = Boolean(selectedFileName && selectedWorkerFileName && selectedDocName) && problemCount === 0;
 
   useEffect(() => {
     if (!morningSetupOpen) return;
@@ -82,6 +212,7 @@ export const MorningSetupModal: React.FC = () => {
     setSelectedFileName('');
     setFileContent('');
     setParsedOrdersPreview([]);
+    setOrdersCheck(null);
   };
 
   const handleClearWorkers = (e: React.MouseEvent) => {
@@ -89,6 +220,7 @@ export const MorningSetupModal: React.FC = () => {
     e.preventDefault();
     setSelectedWorkerFileName('');
     setActiveWorkersList([]);
+    setRosterCheck(null);
   };
 
   const handleClearDoc = (e: React.MouseEvent) => {
@@ -96,91 +228,80 @@ export const MorningSetupModal: React.FC = () => {
     e.preventDefault();
     setSelectedDocName('');
     setDocUploaded(false);
+    setTariffCheck(null);
   };
 
-  const applyOrdersText = (fileName: string, text: string) => {
+  const applyOrdersText = (fileName: string, text: string): UploadCheck => {
+    const check = validateUpload('orders', fileName, text);
+    setOrdersCheck(check);
     setSelectedFileName(fileName);
-    setFileContent(text);
-    try {
-      const lines = text.split('\n').filter((l) => l.trim().length > 0);
-      if (lines.length > 1) {
-        const header = lines[0].split(',').map((h) => h.trim().toLowerCase());
-        const idIdx = header.findIndex((h) => h.includes('order_id') || h === 'id');
-        const mIdx = header.findIndex((h) => h.includes('machine'));
-        const dIdx = header.findIndex((h) => h.includes('duration') || h.includes('mins'));
-        const critIdx = header.findIndex((h) => h.includes('critical') || h.includes('melt'));
-        const preview: Array<{ id: string; machine: string; duration: string; isCritical: boolean }> = [];
-        for (let i = 1; i < Math.min(lines.length, 6); i++) {
-          const cols = lines[i].split(',').map((c) => c.trim().replace(/^["']|["']$/g, ''));
-          preview.push({
-            id: idIdx >= 0 && cols[idIdx] ? cols[idIdx] : `ORD_${i}`,
-            machine: mIdx >= 0 && cols[mIdx] ? cols[mIdx] : 'CNC_1',
-            duration: dIdx >= 0 && cols[dIdx] ? `${cols[dIdx]} mins` : '180 mins',
-            isCritical: critIdx >= 0 ? cols[critIdx].toLowerCase() === 'true' : false,
-          });
-        }
-        setParsedOrdersPreview(preview);
-      }
-    } catch (err) {
-      console.warn('Error parsing order preview:', err);
+    if (check.status !== 'valid') {
+      setFileContent('');
+      setParsedOrdersPreview([]);
+      return check;
     }
+    setFileContent(text);
+    setParsedOrdersPreview(
+      check.rows.slice(0, 5).map((r) => ({
+        id: r.order_id,
+        machine: r.machine_id,
+        duration: `${r.duration_mins} mins`,
+        isCritical: isTrue(r.is_critical_melt),
+      }))
+    );
+    return check;
   };
 
-  const applyWorkerText = (fileName: string, text: string) => {
+  const applyWorkerText = (fileName: string, text: string): { check: UploadCheck; workers: Worker[] } => {
+    const check = validateUpload('roster', fileName, text);
+    setRosterCheck(check);
     setSelectedWorkerFileName(fileName);
-    try {
-      const lines = text.split('\n').filter((l) => l.trim().length > 0);
-      if (lines.length > 1) {
-        const header = lines[0].split(',').map((h) => h.trim().toLowerCase());
-        const idIdx = header.findIndex((h) => h.includes('worker_id') || h === 'id');
-        const nameIdx = header.findIndex((h) => h.includes('bilingual') || h.includes('full_name') || h.includes('name'));
-        const phoneIdx = header.findIndex((h) => h.includes('phone'));
-        const stIdx = header.findIndex((h) => h.includes('station') || h.includes('assigned_station'));
-        const roleIdx = header.findIndex((h) => h.includes('role'));
-        const qualIdx = header.findIndex((h) => h.includes('furnace') || h.includes('qualified'));
-        const parsed: Worker[] = [];
-        for (let i = 1; i < lines.length; i++) {
-          const cols = lines[i].split(',').map((c) => c.trim().replace(/^["']|["']$/g, ''));
-          if (cols.length >= 3) {
-            parsed.push({
-              id: idIdx >= 0 && cols[idIdx] ? cols[idIdx].toLowerCase() : `w_up_${i}`,
-              name: nameIdx >= 0 && cols[nameIdx] ? cols[nameIdx] : `Worker ${i}`,
-              phone: phoneIdx >= 0 && cols[phoneIdx] ? cols[phoneIdx] : '',
-              stationId: stIdx >= 0 && cols[stIdx] ? cols[stIdx] : 'st_furnace_1',
-              role: roleIdx >= 0 && cols[roleIdx] ? cols[roleIdx] : 'Industrial Operator',
-              isFurnaceQualified: qualIdx >= 0 ? cols[qualIdx].toLowerCase() === 'true' : false,
-              status: 'working',
-              restTimeRemainingSec: 0,
-              hasConsented: true,
-              consentType: 'voice_enabled',
-              consentDate: '2026-10-18',
-            });
-          }
-        }
-        if (parsed.length > 0) {
-          setActiveWorkersList(parsed);
-          setWorkers(parsed);
-        }
-      }
-    } catch (err) {
-      console.warn('Error parsing worker CSV:', err);
+    if (check.status !== 'valid') {
+      setActiveWorkersList([]);
+      return { check, workers: [] };
     }
+    const parsed: Worker[] = check.rows.map((r) => ({
+      id: r.worker_id.toLowerCase(),
+      name: r.bilingual_name || r.full_name,
+      phone: r.phone_number ?? '',
+      stationId: r.assigned_station_id,
+      role: r.role_title || 'Industrial Operator',
+      isFurnaceQualified: isTrue(r.is_furnace_qualified),
+      status: 'working',
+      restTimeRemainingSec: 0,
+      hasConsented: true,
+      consentType: 'voice_enabled',
+      consentDate: '2026-10-18',
+    }));
+    setActiveWorkersList(parsed);
+    setWorkers(parsed);
+    return { check, workers: parsed };
   };
 
   const handleLoadTemplates = async () => {
     setTemplatesLoading(true);
     setTemplateError('');
+    setSolveError('');
     try {
       const pack = await loadAvailableTemplate(templateDayId);
-      applyOrdersText(pack.orders_filename, pack.orders_csv);
-      applyWorkerText(pack.roster_filename, pack.roster_csv);
+      const orders = applyOrdersText(pack.orders_filename, pack.orders_csv);
+      const roster = applyWorkerText(pack.roster_filename, pack.roster_csv);
+      const tariff = validateUpload('tariff', pack.tariff_filename, pack.tariff_csv);
+      setTariffCheck(tariff);
       setTariffFileName(pack.tariff_filename);
       setSelectedDayId(pack.day_id);
       setDataSource('template');
-      setSelectedDocName('');
-      setDocUploaded(false);
+      setSelectedDocName(pack.tariff_filename);
+      setDocUploaded(true);
+      if ([orders, roster.check, tariff].some((c) => c.status === 'invalid')) {
+        setTemplateError('The sample files did not pass the upload check. The problems are listed below.');
+        return;
+      }
+      await solveMorningPlan(pack.orders_csv, 48, 15, roster.workers, pack.day_id);
+      setCurrentView('planner');
+      setMorningSetupOpen(false);
     } catch {
-      setTemplateError('Templates could not be loaded from the backend. Upload the spreadsheets yourself, or start the API on port 8000.');
+      setTemplateError('The sample files or plan could not be loaded. Your selected files remain visible; check the backend and try again.');
     } finally {
       setTemplatesLoading(false);
     }
@@ -189,40 +310,38 @@ export const MorningSetupModal: React.FC = () => {
   if (!morningSetupOpen) return null;
 
   // Handle manual upload of Orders CSV/Excel
-  const handleOrdersFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        applyOrdersText(file.name, (event.target?.result as string) || '');
-        setDataSource('upload');
-        setSelectedDayId('');
-      };
-      reader.readAsText(file);
-    }
+  const readUpload = (e: React.ChangeEvent<HTMLInputElement>, onText: (fileName: string, text: string) => void) => {
+    const input = e.target;
+    const file = input.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      onText(file.name, (event.target?.result as string) || '');
+      setDataSource('upload');
+      setTemplateError('');
+    };
+    reader.readAsText(file);
+    input.value = '';
   };
 
-  // Handle manual upload of Worker Details CSV/Excel
-  const handleWorkerFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        applyWorkerText(file.name, (event.target?.result as string) || '');
-        setDataSource('upload');
-      };
-      reader.readAsText(file);
-    }
-  };
+  const handleOrdersFileUpload = (e: React.ChangeEvent<HTMLInputElement>) =>
+    readUpload(e, (name, text) => {
+      applyOrdersText(name, text);
+      setSelectedDayId('');
+    });
 
-  // Handle manual upload of Grounding Tariff / Policy Document
-  const handleDocUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedDocName(file.name);
+  const handleWorkerFileUpload = (e: React.ChangeEvent<HTMLInputElement>) =>
+    readUpload(e, (name, text) => {
+      applyWorkerText(name, text);
+    });
+
+  const handleDocUpload = (e: React.ChangeEvent<HTMLInputElement>) =>
+    readUpload(e, (name, text) => {
+      setTariffCheck(validateUpload('tariff', name, text));
+      setSelectedDocName(name);
       setDocUploaded(true);
-    }
-  };
+      setTariffFileName('');
+    });
 
   const handleExtractRules = async () => {
     setIsExtractingRules(true);
@@ -347,9 +466,9 @@ export const MorningSetupModal: React.FC = () => {
               <div className="border border-[#0F5FA8] bg-blue-50/70 rounded-lg p-4 space-y-3">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="font-bold text-[#0F5FA8] uppercase tracking-wider text-xs">Load available templates</p>
+                    <p className="font-bold text-[#0F5FA8] uppercase tracking-wider text-xs">Option 1 — Run with sample files</p>
                     <p className="text-[11px] text-[#1B1F24] mt-1 leading-relaxed">
-                      Nothing is attached until you choose. Load a shipped day package (orders, worker roster, tariff spreadsheet), or upload those spreadsheets yourself. Reference PDFs are not included and stay a manual upload.
+                      Choose a day, then load all three sample files: plant orders, worker roster, and electricity tariff. TEEVRA will immediately start the 48-hour solver.
                     </p>
                   </div>
                   {dataSource === 'template' && (
@@ -376,10 +495,10 @@ export const MorningSetupModal: React.FC = () => {
                   <button
                     type="button"
                     onClick={handleLoadTemplates}
-                    disabled={templatesLoading}
+                    disabled={templatesLoading || isSolvingBackend}
                     className="px-3 py-1.5 rounded-md bg-[#0F5FA8] hover:bg-[#0c4e8a] disabled:bg-slate-300 text-white font-semibold text-xs"
                   >
-                    {templatesLoading ? 'Loading templates…' : 'Load available templates'}
+                    {templatesLoading || isSolvingBackend ? 'Loading files & solving…' : 'Load all sample files & run plan'}
                   </button>
                   {tariffFileName && (
                     <span className="text-[11px] text-[#1E7A46] font-semibold">Tariff sheet: {tariffFileName}</span>
@@ -393,7 +512,7 @@ export const MorningSetupModal: React.FC = () => {
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-bold text-xs uppercase tracking-wider text-[#1B1F24] flex items-center gap-1.5">
                     <UploadCloud size={16} className="text-[#0F5FA8]" />
-                    <span>Upload Custom Plant Files (Bring Your Own Files)</span>
+                    <span>Option 2 — Upload your own files</span>
                   </span>
                   <span className="text-[11px] text-[#5B636E]">Upload your operational spreadsheets and standards</span>
                 </div>
@@ -418,24 +537,27 @@ export const MorningSetupModal: React.FC = () => {
                         </button>
                       ) : (
                         <span className="text-[10px] bg-blue-100 text-[#0F5FA8] font-bold px-1.5 py-0.5 rounded">
-                          CSV / Excel
+                          CSV
                         </span>
                       )}
                     </div>
 
                     <label className={`block border-2 border-dashed rounded-lg p-3.5 text-center transition-colors cursor-pointer ${
-                      selectedFileName ? 'border-[#0F5FA8] bg-blue-50/40' : 'border-[#D9DDE2] hover:border-[#0F5FA8] bg-slate-50/50'
+                      ordersCheck?.status === 'invalid'
+                        ? 'border-red-400 bg-red-50/50'
+                        : selectedFileName ? 'border-[#0F5FA8] bg-blue-50/40' : 'border-[#D9DDE2] hover:border-[#0F5FA8] bg-slate-50/50'
                     }`}>
-                      <input type="file" accept=".csv,.xlsx,.xls" onChange={handleOrdersFileUpload} className="hidden" />
+                      <input type="file" accept=".csv,.xlsx,.xls" onChange={handleOrdersFileUpload} className="hidden" data-testid="orders-upload" />
                       <UploadCloud size={22} className="mx-auto text-[#0F5FA8] mb-1.5" />
                       <p className="font-semibold text-[#1B1F24] text-xs truncate">
                         {selectedFileName || 'Browse or Drag Custom Orders CSV'}
                       </p>
-                      <p className="text-[10px] text-[#5B636E] mt-0.5">
-                        {fileContent ? `✓ ${fileContent.split('\n').filter(Boolean).length - 1} orders loaded` : 'No file selected (Drop your orders here)'}
+                      <p className={`text-[10px] mt-0.5 font-semibold ${ordersCheck?.status === 'invalid' ? 'text-red-700' : ordersCheck ? 'text-[#1E7A46]' : 'text-[#5B636E]'}`}>
+                        {checkStatusText(ordersCheck, 'No file selected (Drop your orders here)')}
                       </p>
                     </label>
                     <p className="text-[10px] text-[#5B636E]">Includes routing sequences, kWh, and due dates across all machines.</p>
+                    <RequiredColumns kind="orders" />
                   </div>
 
                   {/* 2. Worker Roster File */}
@@ -456,26 +578,29 @@ export const MorningSetupModal: React.FC = () => {
                         </button>
                       ) : (
                         <span className="text-[10px] bg-emerald-100 text-[#1E7A46] font-bold px-1.5 py-0.5 rounded">
-                          CSV / Excel
+                          CSV
                         </span>
                       )}
                     </div>
 
                     <label className={`block border-2 border-dashed rounded-lg p-3.5 text-center transition-colors cursor-pointer ${
-                      selectedWorkerFileName ? 'border-emerald-500 bg-emerald-50/60' : 'border-emerald-300 hover:border-emerald-600 bg-white'
+                      rosterCheck?.status === 'invalid'
+                        ? 'border-red-400 bg-red-50/50'
+                        : selectedWorkerFileName ? 'border-emerald-500 bg-emerald-50/60' : 'border-emerald-300 hover:border-emerald-600 bg-white'
                     }`}>
-                      <input type="file" accept=".csv,.xlsx,.xls" onChange={handleWorkerFileUpload} className="hidden" />
+                      <input type="file" accept=".csv,.xlsx,.xls" onChange={handleWorkerFileUpload} className="hidden" data-testid="roster-upload" />
                       <Users size={22} className="mx-auto text-[#1E7A46] mb-1.5" />
                       <p className="font-semibold text-[#1B1F24] text-xs truncate">
                         {selectedWorkerFileName || 'Browse or Drag Custom Worker Roster'}
                       </p>
-                      <p className="text-[10px] text-[#1E7A46] font-bold mt-0.5">
-                        {activeWorkersList.length > 0 ? `✓ ${activeWorkersList.length} workers loaded` : 'No file selected'}
+                      <p className={`text-[10px] font-bold mt-0.5 ${rosterCheck?.status === 'invalid' ? 'text-red-700' : 'text-[#1E7A46]'}`}>
+                        {checkStatusText(rosterCheck, 'No file selected')}
                       </p>
                     </label>
                     <p className="text-[10px] text-[#5B636E]">
                       Uploaded directly from portal. Zero PII stored. Includes relief certifications.
                     </p>
+                    <RequiredColumns kind="roster" />
                   </div>
 
                   {/* 3. Tariff & Grounding Document */}
@@ -502,21 +627,47 @@ export const MorningSetupModal: React.FC = () => {
                     </div>
 
                     <label className={`block border-2 border-dashed rounded-lg p-3.5 text-center transition-colors cursor-pointer ${
-                      selectedDocName ? 'border-[#C2410C] bg-amber-50/40' : 'border-[#D9DDE2] hover:border-[#C2410C] bg-slate-50/50'
+                      tariffCheck?.status === 'invalid'
+                        ? 'border-red-400 bg-red-50/50'
+                        : selectedDocName ? 'border-[#C2410C] bg-amber-50/40' : 'border-[#D9DDE2] hover:border-[#C2410C] bg-slate-50/50'
                     }`}>
-                      <input type="file" accept=".pdf,.doc,.docx,.txt,.csv,.xlsx" onChange={handleDocUpload} className="hidden" />
+                      <input type="file" accept=".pdf,.doc,.docx,.txt,.csv,.xlsx" onChange={handleDocUpload} className="hidden" data-testid="tariff-upload" />
                       <FileUp size={22} className="mx-auto text-[#C2410C] mb-1.5" />
                       <p className="font-semibold text-[#1B1F24] text-xs truncate">
                         {selectedDocName || 'Browse or Drag Tariff / SOP Document'}
                       </p>
-                      <p className="text-[10px] text-[#5B636E] mt-0.5">
-                        {docUploaded ? '✓ PDF or SOP attached' : 'Optional. PDFs are never loaded by templates.'}
+                      <p className={`text-[10px] mt-0.5 font-semibold ${tariffCheck?.status === 'invalid' ? 'text-red-700' : docUploaded ? 'text-[#1E7A46]' : 'text-[#5B636E]'}`}>
+                        {docUploaded ? checkStatusText(tariffCheck, '✓ Document attached') : 'No file selected'}
                       </p>
                     </label>
-                    <p className="text-[10px] text-[#5B636E]">10:00–16:00 solar hours concession (₹6.00/kWh) & peak surcharge.</p>
+                    <p className="text-[10px] text-[#5B636E]">PDF or Word is attached as a reference. A tariff CSV is checked for slot, hour and rate columns.</p>
+                    <RequiredColumns kind="tariff" />
                   </div>
                 </div>
               </div>
+
+              <UploadCheckPanel checks={uploadChecks} />
+
+              {(() => {
+                const notes = uploadChecks.filter((c): c is UploadCheck => Boolean(c && c.status === 'valid' && c.missingOptional.length > 0));
+                if (notes.length === 0) return null;
+                return (
+                  <div className="px-3 py-2 rounded-lg border border-amber-200 bg-amber-50 text-[11px] text-amber-900 space-y-0.5">
+                    {notes.map((c) => (
+                      <p key={c.kind} className="flex items-start gap-1.5">
+                        <AlertTriangle size={13} className="shrink-0 mt-px" />
+                        <span>
+                          <strong>{UPLOAD_SCHEMAS[c.kind].title}:</strong> optional {c.missingOptional.length === 1 ? 'column' : 'columns'}{' '}
+                          {c.missingOptional.map((n, i) => (
+                            <React.Fragment key={n}>{i > 0 && ', '}<code className="font-mono">{n}</code></React.Fragment>
+                          ))}{' '}
+                          not found. Default values will be used.
+                        </span>
+                      </p>
+                    ))}
+                  </div>
+                );
+              })()}
 
               {/* Real-time Preview: Workers Ingestion & Orders Ingestion (Shows User Uploaded Data Only) */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -613,10 +764,12 @@ export const MorningSetupModal: React.FC = () => {
 
               {/* Step 1 Actions */}
               <div className="flex items-center justify-between pt-2 gap-3">
-                <p className="text-[11px] text-[#5B636E]">
-                  {plantFilesReady
-                    ? (dataSource === 'template' ? 'Shipped templates are loaded. You can continue.' : 'Your uploads are loaded. You can continue.')
-                    : 'Continue stays off until orders and the worker roster are loaded.'}
+                <p className={`text-[11px] ${problemCount > 0 ? 'text-red-700 font-semibold' : 'text-[#5B636E]'}`}>
+                  {problemCount > 0
+                    ? `Fix the ${problemCount} ${problemCount === 1 ? 'problem' : 'problems'} listed above to continue.`
+                    : plantFilesReady
+                      ? (dataSource === 'template' ? 'All three sample files are loaded and checked.' : 'All three of your files passed the checks. You can continue.')
+                      : 'Continue stays off until orders, worker roster, and tariff/SOP are loaded.'}
                 </p>
                 <button
                   type="button"

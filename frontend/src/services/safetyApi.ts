@@ -29,6 +29,28 @@ export async function sendWorkerCheckIn(
   return data;
 }
 
+export interface IncidentPhotoAlert {
+  image_id: string;
+  photo_label: string;
+  situation: string;
+  recommended_action: string;
+  gemini_model: string;
+  telegram_sent: boolean;
+  telegram_message_id: number | null;
+}
+
+export async function sendIncidentPhotoAlert(
+  imageId: 'slip' | 'smoke' | 'heat',
+  stationName: string
+): Promise<IncidentPhotoAlert> {
+  const { data } = await apiClient.post<IncidentPhotoAlert>(
+    '/safety/incident-photo',
+    { image_id: imageId, station_name: stationName },
+    { timeout: 60000 }
+  );
+  return data;
+}
+
 export async function reportHazard(
   stationId: string,
   hazardCode: 'HEAT_EXHAUSTION' | 'VENTILATION_FAILURE' | 'COOLING_LINE_LEAK' | 'EQUIPMENT_OVERHEAT' | 'OTHER',

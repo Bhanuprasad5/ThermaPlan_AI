@@ -74,11 +74,11 @@ export const TopBar: React.FC = () => {
               className="bg-transparent font-bold text-xs text-[#1B1F24] outline-hidden cursor-pointer"
               title="Switch Manufacturing Day"
             >
-              <option value="day1_monday">Day 1: Monday (Peak Heat 33.5°C)</option>
-              <option value="day2_tuesday">Day 2: Tuesday (High Solar 850 W/m²)</option>
-              <option value="day3_wednesday">Day 3: Wednesday (Moderate 29.2°C)</option>
-              <option value="day4_thursday">Day 4: Thursday (Staggered Shift)</option>
-              <option value="day5_friday">Day 5: Friday (Expedited Deliveries)</option>
+              <option value="day1_monday">Monday: Castings</option>
+              <option value="day2_tuesday">Tuesday: Housings</option>
+              <option value="day3_wednesday">Wednesday: Gearbox</option>
+              <option value="day4_thursday">Thursday: Pump bodies</option>
+              <option value="day5_friday">Friday: Valve blocks</option>
             </select>
           </div>
           <span className="text-[#5B636E] whitespace-nowrap hidden lg:inline">{weather.timeString}</span>

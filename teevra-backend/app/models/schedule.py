@@ -49,6 +49,11 @@ class KPISummary(BaseModel):
     output_percentage: float
     co2_saved_tco2: float
     cost_savings_inr: float = 0.0
+    # Signed: optimized minus baseline. Positive means the plan uses more energy.
+    energy_delta_kwh: float = 0.0
+    co2_delta_tco2: float = 0.0
+    scheduled_jobs: int = 0
+    total_jobs: int = 0
     honest_co2_banner: str = (
         "Time-shifting saves rupees, not CO2, at an annual average grid factor."
     )
@@ -63,9 +68,70 @@ class CitationItem(BaseModel):
     snippet: str
 
 
+class HeatWindow(BaseModel):
+    """Slots a machine's crew may not work: screening WBGT above the ISO 7243 value, or the rest buffer."""
+    machine_id: str
+    station_id: str
+    start_slot: int
+    end_slot: int  # exclusive
+    peak_wbgt_c: float
+    limit_c: float
+
+
+class TariffBand(BaseModel):
+    start_slot: int
+    end_slot: int  # exclusive
+    rate_inr: float
+    label: Literal["Solar", "Peak", "Normal"]
+
+
+class MachineRow(BaseModel):
+    machine_id: str
+    station_id: str
+    label: str
+    work_class: int
+    limit_c: float
+
+
+class JobMove(BaseModel):
+    order_id: str
+    job_name: str
+    machine_id: str
+    baseline_start_slot: int | None = None
+    baseline_end_slot: int | None = None
+    start_slot: int | None = None
+    end_slot: int | None = None
+    baseline_cost_inr: float = 0.0
+    cost_inr: float = 0.0
+    baseline_heat_slots: int = 0
+    heat_slots: int = 0
+    kind: Literal["heat", "tariff", "machine", "due", "unchanged", "dropped"] = "unchanged"
+    reason: str = ""
+
+
+class ExplanationTrace(BaseModel):
+    """How the plain-English summary was produced. Numbers come from the solver either way."""
+    source: Literal["gemini", "template"]
+    model: str | None = None
+    model_version: str | None = None
+    region: str | None = None
+    latency_ms: int | None = None
+    prompt_tokens: int | None = None
+    output_tokens: int | None = None
+    error: str | None = None
+
+
 class SchedulePlanResponse(BaseModel):
     plan_id: str
+    plan_hash: str = ""
+    baseline_plan_hash: str | None = None
+    solver_seed: int | None = None
+    restart_cap: int | None = None
+    restart_cap_relaxed: bool = False
+    cea_factor_tco2_per_mwh: float | None = None
     parent_plan_id: str | None = None
+    parent_plan_hash: str | None = None
+    summary: str = ""
     created_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
     trigger_type: Literal[
         "MORNING_PLAN", "MACHINE_BREAKDOWN", "SAFETY_SIGNAL", "HEAT_BUFFER_OVERFLOW"
@@ -77,4 +143,14 @@ class SchedulePlanResponse(BaseModel):
     schedule_slots: list[ScheduleSlotAssignment] = Field(default_factory=list)
     heat_buffers: list[HeatBuffer] = Field(default_factory=list)
     gemini_explanation_text: str = ""
+    explanation_trace: ExplanationTrace | None = None
     citations: list[CitationItem] = Field(default_factory=list)
+    slot_minutes: int = 15
+    horizon_hours: int = 48
+    dataset_label: str = ""
+    weather_source: str = ""
+    baseline_schedule_slots: list[ScheduleSlotAssignment] = Field(default_factory=list)
+    machines: list[MachineRow] = Field(default_factory=list)
+    heat_windows: list[HeatWindow] = Field(default_factory=list)
+    tariff_bands: list[TariffBand] = Field(default_factory=list)
+    job_moves: list[JobMove] = Field(default_factory=list)

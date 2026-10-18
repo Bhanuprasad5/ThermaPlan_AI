@@ -13,7 +13,7 @@ Creates:
 
 ## 2. `seed_bigquery_factors.py`
 Populates official rulebooks:
-- CEA Grid Factor v20.0 (0.716 tCO2/MWh).
+- CEA Grid Factor v22 (0.675 tCO2/MWh).
 - TGSPDCL Time-of-Day Tariffs (Base ₹7.50, Solar ₹6.00, Peak ₹9.00).
 - ISO 7243:2017 Table A.1 Heat Limits (Classes 0 to 4).
 - 48-Hour (192-slot) diurnal weather baseline.

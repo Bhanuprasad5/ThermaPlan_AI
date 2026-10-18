@@ -5,10 +5,6 @@ and converts it into 192 deterministic 15-minute thermal slots using Stull psych
 Includes automatic BigQuery cached fallback and conservative safety degradation on failure.
 """
 
-import math
-from datetime import UTC, datetime
-
-import httpx
 import structlog
 
 from app.config import get_settings
@@ -26,43 +22,35 @@ class WeatherIntegrator:
         self.longitude = self.settings.PLANT_LONGITUDE
         self.cached_48h_slots: list[WeatherSlot] = []
 
-    def _generate_synthetic_48h_baseline(self) -> list[WeatherSlot]:
-        """
-        Generates realistic 48-hour diurnal cycle for Hyderabad/Telangana summer:
-        - Cool morning (06:00-09:00): 23°C to 27°C, RH 60%
-        - Peak afternoon solar (12:00-15:00): 38°C to 41.5°C, RH 35%
-        - Evening (18:00-22:00): 31°C to 34°C, RH 45%
-        - Night (22:00-06:00): 24°C to 28°C, RH 65%
-        """
-        slots = []
-        base_time = datetime.now(UTC).replace(minute=0, second=0, microsecond=0)
+    # Replayed Hyderabad summer day, same every solve.
+    # 12:00-16:00 is the only furnace heat-breach window. CNC and the paint oven
+    # stay under their screening limit, so they can use the cheap solar hours.
+    # Outside that window the furnace is under its 26 C screening value, including
+    # the evening tariff peak, so the solver can show the trade honestly.
+    REPLAY_HOUR: dict[int, tuple[float, float, float]] = {
+        0: (27, 60, 28), 1: (26, 62, 27), 2: (26, 62, 27), 3: (25, 65, 26),
+        4: (25, 65, 26), 5: (25, 66, 26), 6: (26, 64, 27), 7: (27, 60, 28),
+        8: (28, 58, 29), 9: (29, 55, 30), 10: (31, 50, 33), 11: (33, 46, 35),
+        12: (38, 38, 41), 13: (40, 35, 43), 14: (41, 33, 44), 15: (40, 35, 43),
+        16: (35, 42, 37), 17: (33, 46, 35), 18: (32, 48, 33), 19: (31, 50, 32),
+        20: (30, 52, 31), 21: (29, 55, 30), 22: (28, 58, 29), 23: (27, 60, 28),
+    }
 
+    def _generate_synthetic_48h_baseline(self) -> list[WeatherSlot]:
+        """48-hour replay of one Hyderabad summer day. Identical on every call."""
+        slots = []
         for slot in range(192):
             h = (slot // 4) % 24
             m = (slot % 4) * 15
             day = (slot // 96) + 1
-
-            # Diurnal curve modeling
-            rad = 2 * math.pi * (h + m / 60.0 - 6.0) / 24.0
-            diurnal_factor = (
-                math.sin(rad - math.pi / 2) + 1.0
-            ) / 2.0  # 0 at 06:00, 1 at 14:00
-
-            air_temp = round(24.0 + (16.5 * diurnal_factor), 1)  # 24°C to 40.5°C
-            rh = round(65.0 - (32.0 * diurnal_factor), 1)  # 65% to 33%
-
-            # Stull natural wet bulb
+            air_temp, rh, ambient_globe = self.REPLAY_HOUR[h]
             tw = calculate_stull_natural_wet_bulb(air_temp, rh)
-            ambient_globe = round(air_temp + (2.5 * diurnal_factor), 1)
-
             tod_info = get_tgspdcl_tod_rate(h)
-            ts_str = f"Day {day} {h:02d}:{m:02d} IST"
-
             slots.append(
                 WeatherSlot(
-                    forecast_id=f"FC_SYNTH_{slot}",
+                    forecast_id=f"FC_REPLAY_{slot}",
                     slot_index=slot,
-                    timestamp_ist=ts_str,
+                    timestamp_ist=f"Day {day} {h:02d}:{m:02d} IST",
                     hour_of_day=h,
                     air_temp_c=air_temp,
                     relative_humidity_pct=rh,
@@ -70,65 +58,22 @@ class WeatherIntegrator:
                     ambient_globe_temp_c=ambient_globe,
                     is_solar_hour=tod_info["is_solar"],
                     is_peak_tariff_hour=tod_info["is_peak"],
-                    source="BIGQUERY_CACHED_FALLBACK",
+                    source="REPLAYED_SUMMER_DAY",
                 )
             )
         return slots
 
     async def fetch_48h_weather(self) -> list[WeatherSlot]:
-        """Queries Open-Meteo API or falls back to synthetic diurnal baseline."""
-        url = (
-            f"https://api.open-meteo.com/v1/forecast"
-            f"?latitude={self.latitude}&longitude={self.longitude}"
-            f"&hourly=temperature_2m,relative_humidity_2m,apparent_temperature"
-            f"&forecast_days=2&timezone=Asia%2FKolkata"
-        )
-        try:
-            async with httpx.AsyncClient(timeout=4.0) as client:
-                resp = await client.get(url)
-                if resp.status_code == 200:
-                    data = resp.json()
-                    hourly = data.get("hourly", {})
-                    temps = hourly.get("temperature_2m", [])
-                    rhs = hourly.get("relative_humidity_2m", [])
+        """Returns the replayed summer day so two solves of the same orders match.
 
-                    slots = []
-                    # Interpolate 48 hourly points into 192 15-minute slots
-                    for slot in range(192):
-                        h_idx = min(len(temps) - 1, slot // 4)
-                        h = (slot // 4) % 24
-                        m = (slot % 4) * 15
-                        day = (slot // 96) + 1
-
-                        t_c = float(temps[h_idx]) if h_idx < len(temps) else 30.0
-                        rh_pct = float(rhs[h_idx]) if h_idx < len(rhs) else 50.0
-                        tw = calculate_stull_natural_wet_bulb(t_c, rh_pct)
-                        is_solar = 10 <= h < 16
-                        globe_t = round(t_c + (2.0 if is_solar else 0.5), 1)
-                        tod_info = get_tgspdcl_tod_rate(h)
-
-                        slots.append(
-                            WeatherSlot(
-                                forecast_id=f"FC_LIVE_{slot}",
-                                slot_index=slot,
-                                timestamp_ist=f"Day {day} {h:02d}:{m:02d} IST",
-                                hour_of_day=h,
-                                air_temp_c=t_c,
-                                relative_humidity_pct=rh_pct,
-                                natural_wet_bulb_c=tw,
-                                ambient_globe_temp_c=globe_t,
-                                is_solar_hour=tod_info["is_solar"],
-                                is_peak_tariff_hour=tod_info["is_peak"],
-                                source="OPEN_METEO_LIVE",
-                            )
-                        )
-                    self.cached_48h_slots = slots
-                    logger.info("open_meteo_48h_fetched", total_slots=len(slots))
-                    return slots
-        except Exception as e:
-            logger.warning("open_meteo_failed_using_cached_baseline", error=str(e))
-
+        Live Open-Meteo is intentionally not on this path. October weather in
+        Hyderabad does not open a furnace heat window, so the plan would show
+        no heat decision at all. The source field says REPLAYED_SUMMER_DAY.
+        """
+        if self.cached_48h_slots and self.cached_48h_slots[0].source == "REPLAYED_SUMMER_DAY":
+            return self.cached_48h_slots
         self.cached_48h_slots = self._generate_synthetic_48h_baseline()
+        logger.info("replayed_summer_day", total_slots=len(self.cached_48h_slots))
         return self.cached_48h_slots
 
     def simulate_weather_spike(
@@ -162,7 +107,7 @@ class WeatherIntegrator:
                         ambient_globe_temp_c=new_globe,
                         is_solar_hour=s.is_solar_hour,
                         is_peak_tariff_hour=s.is_peak_tariff_hour,
-                        source="OPEN_METEO_LIVE",
+                        source="REPLAYED_SUMMER_DAY",
                     )
                 )
             else:

@@ -12,7 +12,7 @@ This package contains **zero AI text generation**. Every single rupee, degree Ce
 
 ### 2. `carbon_tariff_calc.py`
 - **TGSPDCL Time-of-Day (ToD) Tariffs**: Base ₹7.50/kWh, Solar hours 10:00–16:00 (0.8x = ₹6.00/kWh), Peak hours 18:00–22:00 (1.2x = ₹9.00/kWh).
-- **Honest CO2 Accounting**: Uses CEA Baseline Database v20.0 factor (0.716 tCO2/MWh). Enforces the hard rule that pure time-shifting without net kWh reduction yields 0.0 tCO2 savings.
+- **Honest CO2 Accounting**: Uses CEA Baseline Database v22 factor (0.675 tCO2/MWh). Enforces the hard rule that pure time-shifting without net kWh reduction yields 0.0 tCO2 savings.
 
 ### 3. `ortools_solver.py`
 - **192 Discrete 15-Minute Slots**: 48-hour forward horizon.

@@ -5,6 +5,7 @@ Reads environment variables with strong typing and production defaults.
 
 from functools import lru_cache
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -45,6 +46,17 @@ class Settings(BaseSettings):
     # Vertex AI Model Names (Updated to gemini-3.8-flash)
     GEMINI_FLASH_MODEL: str = "gemini-3.8-flash"
     GEMINI_LIVE_MODEL: str = "gemini-3.8-flash"
+
+    # Telegram alerts. Values stay in the local environment and are never sent to the browser.
+    TELEGRAM_BOT_TOKEN: str = ""
+    CHAT_ID: str = ""
+
+    @field_validator("TELEGRAM_BOT_TOKEN", "CHAT_ID", mode="before")
+    @classmethod
+    def strip_secret_quotes(cls, value: object) -> object:
+        if isinstance(value, str):
+            return value.strip().strip('"').strip("'")
+        return value
 
 
 @lru_cache

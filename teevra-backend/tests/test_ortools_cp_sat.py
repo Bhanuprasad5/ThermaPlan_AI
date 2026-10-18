@@ -39,9 +39,9 @@ def test_cp_sat_dual_solve_and_safety_constraints(
     furnace_slots = [
         s.slot_index
         for s in optimized.schedule_slots
-        if s.order_id in ("ORD_101", "ORD_AERO_01") and s.machine_id == "FURNACE_1"
+        if s.order_id in ("MON-01", "ORD_101", "ORD_AERO_01") and s.machine_id == "FURNACE_1"
     ]
-    assert len(furnace_slots) == 12  # 12 slots = 3 hours
+    assert len(furnace_slots) == 24  # 24 slots = 6 hours, one ladle melt
     # Check consecutive
     for i in range(len(furnace_slots) - 1):
         assert furnace_slots[i + 1] == furnace_slots[i] + 1, (

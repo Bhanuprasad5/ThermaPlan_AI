@@ -1,5 +1,5 @@
 import apiClient from './apiClient';
-import { SchedulePlanResponse, ExtractedConstraintJSON, CitationItem } from '../types/backend';
+import { SchedulePlanResponse, ExtractedConstraintJSON, CitationItem, EvalsSummary, ExplanationTrace } from '../types/backend';
 
 export async function getMorningPlan(): Promise<SchedulePlanResponse> {
   const { data } = await apiClient.get<SchedulePlanResponse>('/manager/morning-plan');
@@ -41,7 +41,8 @@ export async function solve48h(
   horizonHours = 48,
   slotDurationMinutes = 15,
   ordersCsv?: string,
-  dayId?: string
+  dayId?: string,
+  datasetLabel?: string
 ): Promise<SchedulePlanResponse> {
   const { data } = await apiClient.post<SchedulePlanResponse>('/manager/solve-48h', {
     horizon_hours: horizonHours,
@@ -50,7 +51,18 @@ export async function solve48h(
     enforce_tariff_optimization: true,
     orders_csv: ordersCsv || undefined,
     day_id: dayId || undefined,
+    dataset_label: datasetLabel || undefined,
   });
+  return data;
+}
+
+export async function getEvalsSummary(): Promise<EvalsSummary> {
+  const { data } = await apiClient.get<EvalsSummary>('/manager/evals/summary');
+  return data;
+}
+
+export async function explainActivePlan(): Promise<{ plan_id: string; text: string; trace: ExplanationTrace }> {
+  const { data } = await apiClient.post('/manager/explain');
   return data;
 }
 

@@ -47,6 +47,7 @@ class PlanningConfigRequest(BaseModel):
     enforce_tariff_optimization: bool = Field(default=True)
     orders_csv: str | None = Field(default=None, description="Optional raw CSV of plant orders for custom solve")
     day_id: str | None = Field(default=None, description="Optional day identifier (e.g. day1_monday, day2_tuesday)")
+    dataset_label: str | None = Field(default=None, description="Name shown in run history, e.g. the uploaded file name")
 
     @property
     def total_slots(self) -> int:
@@ -102,7 +103,7 @@ class WeatherSlot(BaseModel):
     ambient_globe_temp_c: float
     is_solar_hour: bool
     is_peak_tariff_hour: bool
-    source: Literal["OPEN_METEO_LIVE", "BIGQUERY_CACHED_FALLBACK"] = "OPEN_METEO_LIVE"
+    source: Literal["OPEN_METEO_LIVE", "BIGQUERY_CACHED_FALLBACK", "REPLAYED_SUMMER_DAY"] = "REPLAYED_SUMMER_DAY"
 
 
 class WeatherSpikeRequest(BaseModel):

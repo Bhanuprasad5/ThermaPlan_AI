@@ -105,27 +105,38 @@ def compute_honest_carbon_and_savings(
     optimized_cost_inr: float,
 ) -> dict[str, Any]:
     """
-    Honest CO2 Accounting:
-    Delta kWh = baseline_kwh - optimized_kwh.
-    Delta tCO2 = Delta kWh * 0.000716.
-    Hard Rule: If delta_kwh <= 0 (time-shifting only), co2_saved_tco2 is strictly 0.0.
+    Honest CO2 accounting at the CEA v22 grid average (0.675 tCO2/MWh).
+    energy_delta_kwh = optimized - baseline (signed; positive means more energy).
+    co2_delta_tco2 = energy_delta_kwh / 1000 * 0.675 (signed).
+    co2_saved_tco2 is never negative and is 0.0 unless energy actually fell.
     """
     cost_savings = round(baseline_cost_inr - optimized_cost_inr, 2)
-    delta_kwh = round(baseline_kwh - optimized_kwh, 3)
+    energy_delta = round(optimized_kwh - baseline_kwh, 2)
+    co2_delta = round(energy_delta * CEA_GRID_EMISSION_FACTOR_TCO2_PER_KWH, 4)
+    delta_kwh = round(-energy_delta, 3)
 
-    if delta_kwh <= 0.001:
+    if energy_delta > 0.01:
         co2_saved = 0.0
         honest_banner = (
-            "Time-shifting saves rupees, not CO2, at an annual average grid factor."
+            f"Uses {energy_delta:,.1f} kWh more than the baseline "
+            f"(+{co2_delta:.3f} tCO2 at CEA v22). No CO2 saving is claimed."
+        )
+    elif energy_delta < -0.01:
+        co2_saved = round(-co2_delta, 4)
+        honest_banner = (
+            f"Uses {-energy_delta:,.1f} kWh less than the baseline "
+            f"({co2_saved:.3f} tCO2 avoided at CEA v22)."
         )
     else:
-        co2_saved = round(delta_kwh * CEA_GRID_EMISSION_FACTOR_TCO2_PER_KWH, 4)
-        honest_banner = f"Real energy reduction: {delta_kwh:.1f} kWh avoided ({co2_saved:.3f} tCO2 saved via CEA v22 grid factor)."
+        co2_saved = 0.0
+        honest_banner = "Same energy as the baseline. Time-shifting saves rupees, not CO2, at the grid average factor."
 
     return {
         "baseline_kwh": round(baseline_kwh, 2),
         "optimized_kwh": round(optimized_kwh, 2),
         "delta_kwh": delta_kwh,
+        "energy_delta_kwh": energy_delta,
+        "co2_delta_tco2": co2_delta,
         "baseline_cost_inr": round(baseline_cost_inr, 2),
         "optimized_cost_inr": round(optimized_cost_inr, 2),
         "cost_savings_inr": cost_savings,

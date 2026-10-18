@@ -26,7 +26,7 @@ import { usePlant } from '../../context/PlantContext';
 
 export const StartPage: React.FC = () => {
   const {
-    metrics,
+    activePlan,
     workers,
     loadDemoPlant,
     setCurrentView,
@@ -69,7 +69,7 @@ export const StartPage: React.FC = () => {
               title="Click to view solver run details"
             >
               <span className={`w-2 h-2 rounded-full ${backendConnected ? 'bg-emerald-500 animate-pulse' : 'bg-blue-500'}`}></span>
-              <span>{backendConnected ? 'Live Backend (Port 8000)' : 'Deterministic Solver (Seed 42)'}</span>
+              <span>{backendConnected ? 'Solver connected' : 'Solver not reached yet'}</span>
               <Info size={13} className="text-[#0F5FA8] ml-0.5" />
             </button>
 
@@ -201,7 +201,11 @@ export const StartPage: React.FC = () => {
                   <Activity size={16} className="text-[#0F5FA8]" />
                   <span>Real-Time Operational KPIs</span>
                 </h2>
-                <p className="text-xs text-[#5B636E]">Solver run at {metrics.solverTimestamp} (Seed {metrics.solverSeed}, Plan #{metrics.planHash})</p>
+                <p className="text-xs text-[#5B636E]">
+                  {activePlan
+                    ? `${activePlan.dataset_label} · ${activePlan.plan_id} · seed ${activePlan.solver_seed ?? 42} · ${activePlan.solve_time_sec}s`
+                    : 'Run pending. Launch a plan to see the numbers.'}
+                </p>
               </div>
               <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-blue-50 text-[#0F5FA8] font-bold border border-blue-200">
                 192 SLOTS • 15 MIN
@@ -220,17 +224,17 @@ export const StartPage: React.FC = () => {
                 </div>
                 <div className="flex items-baseline gap-2 mb-1.5">
                   <span className="text-4xl font-black text-[#1E7A46] tabular-nums">
-                    {metrics.heatBreachesAfter}
+                    {activePlan ? activePlan.kpi.heat_breaches_count : '—'}
                   </span>
-                  <span className="text-sm font-semibold text-[#5B636E] line-through tabular-nums">
-                    {metrics.heatBreachesBefore} baseline
+                  <span className="text-sm font-semibold text-[#5B636E] tabular-nums">
+                    {activePlan?.baseline_kpi ? `from ${activePlan.baseline_kpi.heat_breaches_count}` : 'slots'}
                   </span>
                 </div>
                 <div className="inline-block text-[11px] px-2 py-0.5 rounded font-bold bg-emerald-100 text-[#1E7A46] mb-2">
-                  100% Heat-Safe • 0 Violations
+                  {activePlan ? 'Unsafe-heat slots, this run' : 'Run pending'}
                 </div>
                 <p className="text-[11px] text-[#5B636E] border-t border-[#D9DDE2] pt-2">
-                  Zero threshold crossings in 192 slots
+                  Slots where work sat above the crew limit
                 </p>
               </div>
 
@@ -244,41 +248,45 @@ export const StartPage: React.FC = () => {
                 </div>
                 <div className="flex items-baseline gap-2 mb-1.5">
                   <span className="text-4xl font-black text-[#1B1F24] tabular-nums">
-                    {metrics.outputPct}%
+                    {activePlan ? `${activePlan.kpi.output_percentage}%` : '—'}
                   </span>
                   <span className="text-sm font-semibold text-[#5B636E] tabular-nums">
-                    vs {metrics.outputPctBefore}% base
+                    {activePlan?.baseline_kpi ? `baseline ${activePlan.baseline_kpi.output_percentage}%` : ''}
                   </span>
                 </div>
                 <div className="inline-block text-[11px] px-2 py-0.5 rounded font-bold bg-blue-100 text-[#0F5FA8] mb-2">
-                  Target Met (≥ 98.0%)
+                  Jobs placed by their due time
                 </div>
                 <p className="text-[11px] text-[#5B636E] border-t border-[#D9DDE2] pt-2">
-                  Full batch order throughput guaranteed
+                  {activePlan ? `${activePlan.kpi.scheduled_jobs} of ${activePlan.kpi.total_jobs} jobs` : 'Appears after a solve'}
                 </p>
               </div>
 
               {/* KPI 3: Energy Bill */}
               <div className="bg-white rounded-xl p-5 border border-[#D9DDE2] shadow-xs">
                 <div className="flex items-center justify-between text-[#5B636E] text-xs font-semibold mb-2">
-                  <span>Power Bill (TGSPDCL HT-1)</span>
+                  <span>Power bill, this run</span>
                   <span className="p-1.5 rounded-md bg-amber-50 text-[#F5B841]">
                     <Zap size={16} />
                   </span>
                 </div>
                 <div className="flex items-baseline gap-2 mb-1.5">
                   <span className="text-3xl font-black text-[#1B1F24] tabular-nums">
-                    ₹{metrics.inrCostAfter.toLocaleString()}
+                    {activePlan ? `₹${Math.round(activePlan.kpi.total_cost_inr).toLocaleString()}` : '—'}
                   </span>
-                  <span className="text-xs font-semibold text-[#5B636E] line-through tabular-nums">
-                    ₹{metrics.inrCostBefore.toLocaleString()}
+                  <span className="text-xs font-semibold text-[#5B636E] tabular-nums">
+                    {activePlan?.baseline_kpi ? `from ₹${Math.round(activePlan.baseline_kpi.total_cost_inr).toLocaleString()}` : ''}
                   </span>
                 </div>
                 <div className="inline-block text-[11px] px-2 py-0.5 rounded font-bold bg-amber-100 text-amber-900 mb-2">
-                  Saved ₹{(metrics.inrCostBefore - metrics.inrCostAfter).toLocaleString()} ({metrics.inrCostBefore > 0 ? -((metrics.inrCostBefore - metrics.inrCostAfter) / metrics.inrCostBefore * 100).toFixed(1) : '-14.8'}%)
+                  {activePlan?.baseline_kpi
+                    ? `Saves ₹${Math.round(activePlan.baseline_kpi.total_cost_inr - activePlan.kpi.total_cost_inr).toLocaleString()}`
+                    : 'Run pending'}
                 </div>
                 <p className="text-[11px] text-[#5B636E] border-t border-[#D9DDE2] pt-2">
-                  {metrics.energyKwhAfter.toLocaleString()} kWh shifted into solar tariff (₹6.00/kWh)
+                  {activePlan
+                    ? `${Math.round(activePlan.kpi.total_kwh).toLocaleString()} kWh · illustrative tariff`
+                    : 'Illustrative time-of-day tariff'}
                 </p>
               </div>
 
@@ -292,17 +300,15 @@ export const StartPage: React.FC = () => {
                 </div>
                 <div className="flex items-baseline gap-2 mb-1.5">
                   <span className="text-3xl font-black text-[#1E7A46] tabular-nums">
-                    +{metrics.minMarginC}°C
+                    {activePlan ? `${activePlan.kpi.co2_saved_tco2} t` : '—'}
                   </span>
-                  <span className="text-sm font-semibold text-[#1E7A46] tabular-nums">
-                    thermal margin
-                  </span>
+                  <span className="text-sm font-semibold text-[#1E7A46] tabular-nums">CO2</span>
                 </div>
                 <div className="inline-block text-[11px] px-2 py-0.5 rounded font-bold bg-emerald-100 text-[#1E7A46] mb-2">
-                  {metrics.co2SavedTons} tCO2 Saved • 4 Optimal Restarts
+                  {activePlan ? `${activePlan.kpi.total_restarts} restarts` : 'Run pending'}
                 </div>
-                <p className="text-[11px] text-[#5B636E] border-t border-[#D9DDE2] pt-2 truncate" title="CEA v22.0, FY 2025-26 weighted average @ 0.675 tCO2/MWh">
-                  CEA v22.0 factor (0.675 tCO2/MWh)
+                <p className="text-[11px] text-[#5B636E] border-t border-[#D9DDE2] pt-2 truncate" title={activePlan?.kpi.honest_co2_banner}>
+                  {activePlan?.kpi.honest_co2_banner || 'CEA v22, 0.675 tCO2/MWh. Time-shifting is not claimed as CO2 saved.'}
                 </p>
               </div>
             </div>
@@ -438,7 +444,8 @@ export const StartPage: React.FC = () => {
                 <strong className="text-[#1B1F24]">Plant Profile:</strong> 16 workstations, {workers.length} workers across 6 bay groups (Furnace, Charging, CNC Machining, Paint Curing, Quench, and Assembly/Quality).
               </p>
               <p>
-                <strong className="text-[#1B1F24]">Deterministic Solver:</strong> Running Google OR-Tools CP-SAT in <code>asia-south1</code> (seed {metrics.solverSeed}, solve time {metrics.solverTimestamp}).
+                <strong className="text-[#1B1F24]">Deterministic Solver:</strong> Google OR-Tools CP-SAT, seed 42, one worker.
+                {activePlan ? ` Last solve ${activePlan.solve_time_sec}s, ${activePlan.plan_id}.` : ' No solve yet.'}
               </p>
               <p>
                 <strong className="text-[#1B1F24]">Tariffs & Weather:</strong> Grounded in TGSPDCL HT-1 FY26 tariff matrix (20% solar concession) and Open-Meteo weather replayed forecast.

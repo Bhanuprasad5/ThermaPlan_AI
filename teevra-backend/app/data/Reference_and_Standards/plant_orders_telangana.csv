@@ -1,46 +1,9 @@
 upload_batch_id,order_id,job_name,machine_id,station_id,routing_seq,duration_mins,duration_slots,kwh_per_op,restart_kwh,load_tag,splittable,due_slot,is_critical_melt
-batch_telangana_48h,ORD_AERO_01,Defense Titanium Landing Gear Billet Melt,FURNACE_1,FURNACE_BAY,1,180,12,480.0,120.0,fixed,False,32,True
-batch_telangana_48h,ORD_AERO_02,Hydraulic Valve Body Ingot Pour,FURNACE_2,FURNACE_BAY,1,150,10,380.0,90.0,fixed,False,36,True
-batch_telangana_48h,ORD_AERO_03,Aircraft Actuator Rough Machining,CNC_1,CNC_BAY,2,180,12,180.0,20.0,fixed,False,60,False
-batch_telangana_48h,ORD_AERO_04,5-Axis Precision Impeller Blade Profiling,CNC_2,CNC_BAY,3,240,16,210.0,25.0,shiftable,False,80,False
-batch_telangana_48h,ORD_AERO_05,Titanium Quench & Vacuum Stress Relief,HEAT_TREAT_1,OVEN_BAY,4,210,14,310.0,45.0,shiftable,False,100,False
-batch_telangana_48h,ORD_AERO_06,Ultrasonic Flaw Detection & CMM Calibration,QUALITY_INSPECT,QUALITY_BAY,5,90,6,25.0,5.0,shiftable,False,115,False
-batch_telangana_48h,ORD_AERO_07,Aerospace Actuator Final Robotic Assembly,ASSEMBLY_1,ASSEMBLY_BAY,6,150,10,40.0,8.0,fixed,False,130,False
-batch_telangana_48h,ORD_EV_01,EV Motor Stator Housing Die Casting,FURNACE_1,FURNACE_BAY,1,120,8,340.0,80.0,fixed,False,48,True
-batch_telangana_48h,ORD_EV_02,High-Conductivity Copper Rotor Casting,FURNACE_2,FURNACE_BAY,1,150,10,360.0,85.0,fixed,False,52,True
-batch_telangana_48h,ORD_EV_03,Scrap Feed & Deoxidizing Flux Staging,CHARGING_BAY,FURNACE_BAY,1,120,8,110.0,15.0,fixed,False,40,False
-batch_telangana_48h,ORD_EV_04,Stator Outer Diameter High-Speed Turning,CNC_3,CNC_BAY,2,180,12,160.0,18.0,shiftable,False,72,False
-batch_telangana_48h,ORD_EV_05,Rotor Lamination Pinion Milling,CNC_4,CNC_BAY,2,150,10,140.0,15.0,shiftable,False,76,False
-batch_telangana_48h,ORD_EV_06,Stator Anti-Corrosion Electro-Deposition Coat,OVEN_1,OVEN_BAY,3,240,16,280.0,35.0,shiftable,False,96,False
-batch_telangana_48h,ORD_EV_07,Automated Epoxy Powder Insulative Curing,OVEN_2,OVEN_BAY,4,180,12,240.0,30.0,shiftable,False,110,False
-batch_telangana_48h,ORD_EV_08,Automated High-Speed Stator Insertion Cell,ASSEMBLY_1,ASSEMBLY_BAY,5,180,12,45.0,8.0,fixed,False,128,False
-batch_telangana_48h,ORD_EV_09,Laser Dynamic Balancing & Dyno Performance Test,QUALITY_INSPECT,QUALITY_BAY,6,120,8,35.0,6.0,fixed,False,140,False
-batch_telangana_48h,ORD_RAIL_01,High-Speed Rail Bogie Pivot Forging Melt,FURNACE_3,FURNACE_BAY,1,240,16,520.0,130.0,fixed,False,44,True
-batch_telangana_48h,ORD_RAIL_02,Bogie Pivot Ingot Annealing & Normalizing,HEAT_TREAT_1,OVEN_BAY,2,270,18,380.0,50.0,shiftable,False,70,False
-batch_telangana_48h,ORD_RAIL_03,Heavy Rail Axle Journal Rough Milling,CNC_3,CNC_BAY,3,210,14,195.0,22.0,shiftable,False,94,False
-batch_telangana_48h,ORD_RAIL_04,High-Torque Hub Flange Thread Milling,CNC_4,CNC_BAY,4,180,12,170.0,20.0,shiftable,False,112,False
-batch_telangana_48h,ORD_RAIL_05,Protective Polyurethane Thermal Enamel Baking,OVEN_1,OVEN_BAY,5,210,14,260.0,30.0,shiftable,False,130,False
-batch_telangana_48h,ORD_RAIL_06,Heavy Axle Bearing Hydraulic Press Fit,ASSEMBLY_2,ASSEMBLY_BAY,6,180,12,55.0,10.0,fixed,False,148,False
-batch_telangana_48h,ORD_WIND_01,Wind Turbine Planetary Ring Gear Melt,FURNACE_1,FURNACE_BAY,1,210,14,460.0,110.0,fixed,False,64,True
-batch_telangana_48h,ORD_WIND_02,Gear Blank Hot Sand Mould Cooling & Shakeout,CHARGING_BAY,FURNACE_BAY,1,150,10,130.0,20.0,fixed,False,68,False
-batch_telangana_48h,ORD_WIND_03,Planetary Gear Tooth Profile Hobbing & Shaping,CNC_5,CNC_BAY,2,300,20,240.0,28.0,shiftable,False,98,False
-batch_telangana_48h,ORD_WIND_04,Carburizing & Case Hardening Thermal Cycle,HEAT_TREAT_1,OVEN_BAY,3,240,16,350.0,45.0,shiftable,False,122,False
-batch_telangana_48h,ORD_WIND_05,Planetary Gear Sub-assembly & Backlash Check,ASSEMBLY_2,ASSEMBLY_BAY,4,180,12,50.0,8.0,fixed,False,144,False
-batch_telangana_48h,ORD_AUTO_01,Automotive Dual-Clutch Transmission Housing Cast,FURNACE_2,FURNACE_BAY,1,180,12,390.0,95.0,fixed,False,56,True
-batch_telangana_48h,ORD_AUTO_02,Transmission Housing Face Milling & Drilling,CNC_1,CNC_BAY,2,150,10,150.0,16.0,shiftable,False,82,False
-batch_telangana_48h,ORD_AUTO_03,Precision Oil Port Micro-Boring & Tapping,CNC_2,CNC_BAY,3,120,8,130.0,14.0,shiftable,False,98,False
-batch_telangana_48h,ORD_AUTO_04,Automated Thermal Degreasing & Primer Flash-off,OVEN_2,OVEN_BAY,4,150,10,190.0,25.0,shiftable,False,118,False
-batch_telangana_48h,ORD_AUTO_05,Multi-Spindle Valve Body Fastening & Leak Test,ASSEMBLY_1,ASSEMBLY_BAY,5,120,8,35.0,6.0,fixed,False,134,False
-batch_telangana_48h,ORD_AUTO_06,CMM Coordinate Volumetric Accuracy Verification,QUALITY_INSPECT,QUALITY_BAY,6,90,6,20.0,4.0,shiftable,False,146,False
-batch_telangana_48h,ORD_MED_01,Medical Titanium Hip Implant Precision Forging,FURNACE_3,FURNACE_BAY,1,150,10,320.0,75.0,fixed,False,60,True
-batch_telangana_48h,ORD_MED_02,5-Axis Contour Sculpting & High-Luster Polish,CNC_5,CNC_BAY,2,210,14,165.0,18.0,shiftable,False,92,False
-batch_telangana_48h,ORD_MED_03,Biocompatible Passivation & Cleanroom Curing,OVEN_2,OVEN_BAY,3,180,12,210.0,28.0,shiftable,False,116,False
-batch_telangana_48h,ORD_MED_04,Optical Surface Topography & Cleanliness Audit,QUALITY_INSPECT,QUALITY_BAY,4,90,6,22.0,4.0,fixed,False,130,False
-batch_telangana_48h,ORD_UTIL_01,Central Thermal Ice Storage Chiller Pre-Cooling Cycle,CHILLER_1,UTILITY_BAY,1,360,24,340.0,12.0,interruptible,True,90,False
-batch_telangana_48h,ORD_UTIL_02,Secondary Process Cooling Tower High-Efficiency Pull,CHILLER_1,UTILITY_BAY,1,240,16,230.0,10.0,interruptible,True,140,False
-batch_telangana_48h,ORD_UTIL_03,Plant Central Compressed Air Storage Tank Charge,COMP_1,UTILITY_BAY,1,300,20,260.0,10.0,interruptible,True,85,False
-batch_telangana_48h,ORD_UTIL_04,Pneumatic Automation Reserve Accumulator Top-up,COMP_1,UTILITY_BAY,1,180,12,160.0,8.0,interruptible,True,150,False
-batch_telangana_48h,ORD_BATCH2_01,Night Shift Continuous Billet Preheating Cycle,FURNACE_3,FURNACE_BAY,1,240,16,420.0,90.0,shiftable,False,160,False
-batch_telangana_48h,ORD_BATCH2_02,Day 2 Automotive Heavy Cylinder Block Milling,CNC_3,CNC_BAY,2,270,18,250.0,26.0,shiftable,False,170,False
-batch_telangana_48h,ORD_BATCH2_03,Day 2 EV Battery Enclosure Sealing & Automated Test,ASSEMBLY_2,ASSEMBLY_BAY,3,240,16,60.0,10.0,fixed,False,180,False
-batch_telangana_48h,ORD_BATCH2_04,Day 2 Anti-Corrosion Hydrophobic Oven Baking Run,OVEN_1,OVEN_BAY,4,210,14,270.0,32.0,shiftable,False,188,False
+BATCH_MON,MON-01,Ladle melt A,FURNACE_1,FURNACE_BAY,1,360,24,360,12,fixed,False,191,True
+BATCH_MON,MON-02,Ladle melt B,FURNACE_1,FURNACE_BAY,1,360,24,360,12,fixed,False,191,True
+BATCH_MON,MON-03,Housing mill,CNC_1,CNC_BAY,1,120,8,80,4,shiftable,False,191,False
+BATCH_MON,MON-04,Shaft turn,CNC_2,CNC_BAY,1,120,8,80,4,shiftable,False,191,False
+BATCH_MON,MON-05,Flange mill,CNC_3,CNC_BAY,1,120,8,80,4,shiftable,False,191,False
+BATCH_MON,MON-06,Paint cure,OVEN_1,OVEN_1,1,120,8,80,4,shiftable,False,191,False
+BATCH_MON,MON-07,Ice bank charge,CHILLER_1,CHILLER_1,1,120,8,80,20,interruptible,True,191,False
+BATCH_MON,MON-08,Compressed air,COMP_1,COMP_1,1,120,8,80,4,shiftable,False,191,False

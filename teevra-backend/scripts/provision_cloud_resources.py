@@ -3,7 +3,7 @@ Production Cloud Resource Provisioner & Seeder for TEEVRA (GCP asia-south1).
 Uses the official Google Cloud Python SDK with Application Default Credentials (ADC).
 Provisions:
 1. 6 Strict BigQuery Tables in dataset `teevra_manufacturing_asia_south1`
-2. Seeds `versioned_factor_table` with CEA v20, TGSPDCL Tariffs, and ISO 7243 limits
+2. Seeds `versioned_factor_table` with CEA v22, TGSPDCL Tariffs, and ISO 7243 limits
 3. Seeds `weather_forecast_48h` with 192 slots
 4. Seeds `plant_orders_and_loads` and `workstation_roster`
 5. Provisions Pub/Sub topics: teevra-machine-faults, teevra-weather-alerts, teevra-safety-signals
@@ -195,9 +195,9 @@ def provision_and_seed():
         bucket = storage_client.bucket(bucket_name)
         tariff_summary = (
             "TGSPDCL FY2025-26 Retail Supply Tariff Order.\n"
-            "Clause 4.2a: Base HT-I Industrial rate = Rs 7.50/kWh.\n"
-            "Clause 4.2b: Solar Hours Concession (10:00 to 16:00 hrs) = 20% discount (Rs 6.00/kWh).\n"
-            "Clause 4.2c: Peak Hours Surcharge (18:00 to 22:00 hrs) = 20% penalty (Rs 9.00/kWh).\n"
+            "Normal band: illustrative rate = Rs 7.50/kWh.\n"
+            "Solar band (10:00 to 16:00 hrs) = 20% discount (Rs 6.00/kWh).\n"
+            "Peak band (18:00 to 22:00 hrs) = 20% penalty (Rs 9.00/kWh).\n"
         )
         blob1 = bucket.blob("citations/TGSPDCL_FY26_Tariff_Order.txt")
         blob1.upload_from_string(tariff_summary, content_type="text/plain")

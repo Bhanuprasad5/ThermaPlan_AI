@@ -45,6 +45,21 @@ class EmergencySOSResponse(BaseModel):
     timestamp_ist: str
 
 
+class IncidentPhotoAlertRequest(BaseModel):
+    image_id: Literal["slip", "smoke", "heat"]
+    station_name: str = "Paint & Coating Line (Oven 1)"
+
+
+class IncidentPhotoAlertResponse(BaseModel):
+    image_id: str
+    photo_label: str
+    situation: str
+    recommended_action: str
+    gemini_model: str
+    telegram_sent: bool
+    telegram_message_id: int | None = None
+
+
 class HazardReportRequest(BaseModel):
     station_id: str
     hazard_code: Literal[
