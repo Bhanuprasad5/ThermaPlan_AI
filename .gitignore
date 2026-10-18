@@ -1,32 +1,54 @@
-# Dependencies & environments
+# Dependencies & Virtual Environments
 node_modules/
 .venv/
+venv/
+env/
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.egg-info/
+wheels/
 
-# Build artifacts
+# Build Artifacts & Caches
 dist/
 build/
+coverage/
 .pytest_cache/
 .ruff_cache/
+.firebase/
+*.cache
 
-# Local logs & temp
+# Environment Variables & Secrets (CRITICAL)
+.env
+.env.*
+*.env
+!.env.example
+*.pem
+*.key
+*.cert
+credentials.json
+service-account*.json
+
+# Local Evaluation, Scratch & Runtime Artifacts
 *.log
 scratch/
+check_days.py
+review_extracted.txt
+round2_report.txt
+*.doc
+*.docx
+ThermaPlan_Final_Review.pdf
+accident.png
+last_plan.json
+**/last_plan.json
 
-# Older prototype & scratch folders
+# Older Prototype Folders
 teevra-frontend/
 Build_backend/
 
-# IDE & OS
+# IDE & OS Artifacts
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
-
-# Environment & Secrets
-.env
-*.env
-teevra-backend/.env
