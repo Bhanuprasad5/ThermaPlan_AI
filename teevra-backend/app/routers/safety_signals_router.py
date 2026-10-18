@@ -72,7 +72,7 @@ async def trigger_emergency_sos(req: EmergencySOSRequest):
         event_id=event_id,
         station_id=req.station_id,
         signal_category="SOS",
-        action=f"Zero-AI hardware halt executed: {halt_machines}",
+        action=f"Zero-AI emergency supervisor alert executed for station {req.station_id}",
         rest_minutes=60,
         triggered_replan=True,
     )
@@ -81,10 +81,10 @@ async def trigger_emergency_sos(req: EmergencySOSRequest):
         event_id=event_id,
         station_id=req.station_id,
         is_zero_ai_bypass=True,
-        status="EMERGENCY_HALT_BROADCAST",
+        status="EMERGENCY_SUPERVISOR_ALERTED",
         machines_halted=halt_machines,
         fcm_multicast_dispatched=fcm_success,
-        supervisor_alerted=True,
+        supervisor_alerted=fcm_success,
         timestamp_ist=now_ist,
     )
 

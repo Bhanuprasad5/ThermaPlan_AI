@@ -34,9 +34,6 @@ export const PlannerConsole: React.FC = () => {
 
       {/* Full 5-Column Audit Trace Drawer [T] */}
       <TraceDrawer />
-
-      {/* Morning Setup Wizard Modal */}
-      <MorningSetupModal />
     </div>
   );
 };

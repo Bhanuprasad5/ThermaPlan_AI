@@ -51,6 +51,7 @@ export const WorkerApp: React.FC = () => {
   const [sosStatusStep, setSosStatusStep] = useState<number>(1);
   const [sosCancelRemaining, setSosCancelRemaining] = useState<number>(10);
   const [audioPlaying, setAudioPlaying] = useState<boolean>(false);
+  const [checkInStatus, setCheckInStatus] = useState<string | null>(null);
 
   const currentStation = stations.find((s) => s.id === selectedStationId) || stations[2];
   const stationWorkers = workers.filter((w) => w.stationId === selectedStationId);
@@ -218,36 +219,36 @@ export const WorkerApp: React.FC = () => {
                   <p className="text-sm font-semibold text-[#5B636E]">Consent & Privacy Terms</p>
                 </div>
 
-                <div className="space-y-3 text-xs text-[#1B1F24] leading-relaxed bg-[#F4F5F7] p-4 rounded-xl border border-[#D9DDE2]">
+                <div className="space-y-3 text-sm text-[#1B1F24] leading-relaxed bg-[#F4F5F7] p-4 rounded-xl border border-[#D9DDE2]">
                   <div className="flex items-start gap-2.5">
-                    <CheckCircle2 size={16} className="text-[#1E7A46] shrink-0 mt-0.5" />
+                    <CheckCircle2 size={18} className="text-[#1E7A46] shrink-0 mt-0.5" />
                     <div>
-                      <strong className="font-telugu text-sm">నివేదించినందుకు జరిమానా ఉండదు.</strong>
-                      <p className="text-[#5B636E]">No penalty for reporting heat or taking safety rests.</p>
+                      <strong className="font-telugu text-base">నివేదించినందుకు జరిమానా ఉండదు.</strong>
+                      <p className="text-sm text-[#5B636E]">No penalty for reporting heat or taking safety rests.</p>
                     </div>
                   </div>
 
                   <div className="flex items-start gap-2.5">
-                    <CheckCircle2 size={16} className="text-[#1E7A46] shrink-0 mt-0.5" />
+                    <CheckCircle2 size={18} className="text-[#1E7A46] shrink-0 mt-0.5" />
                     <div>
-                      <strong className="font-telugu text-sm">వేడి & ప్రమాద నివేదికలు అనామకంగా ఉంటాయి.</strong>
-                      <p className="text-[#5B636E]">Too hot and hazard reports show only station, not your name.</p>
+                      <strong className="font-telugu text-base">వేడి & ప్రమాద నివేదికలు అనామకంగా ఉంటాయి.</strong>
+                      <p className="text-sm text-[#5B636E]">Too hot and hazard reports show only station, not your name.</p>
                     </div>
                   </div>
 
                   <div className="flex items-start gap-2.5">
-                    <CheckCircle2 size={16} className="text-[#1E7A46] shrink-0 mt-0.5" />
+                    <CheckCircle2 size={18} className="text-[#1E7A46] shrink-0 mt-0.5" />
                     <div>
-                      <strong className="font-telugu text-sm">SOS మరియు తలతిరగడం సహాయం కోసం పేరు చూపిస్తాయి.</strong>
-                      <p className="text-[#5B636E]">SOS, Dizzy, and Not okay identify you so help can reach you.</p>
+                      <strong className="font-telugu text-base">SOS మరియు తలతిరగడం సహాయం కోసం పేరు చూపిస్తాయి.</strong>
+                      <p className="text-sm text-[#5B636E]">SOS, Dizzy, and Not okay identify you so help can reach you.</p>
                     </div>
                   </div>
 
                   <div className="flex items-start gap-2.5">
-                    <CheckCircle2 size={16} className="text-[#0F5FA8] shrink-0 mt-0.5" />
+                    <CheckCircle2 size={18} className="text-[#0F5FA8] shrink-0 mt-0.5" />
                     <div>
-                      <strong className="font-telugu text-sm">వాయిస్ డేటా గూగుల్ ద్వారా ప్రాసెస్ చేయబడుతుంది.</strong>
-                      <p className="text-[#5B636E]">Buttons only is default. Voice recordings processed outside India.</p>
+                      <strong className="font-telugu text-base">వాయిస్ డేటా గూగుల్ ద్వారా ప్రాసెస్ చేయబడుతుంది.</strong>
+                      <p className="text-sm text-[#5B636E]">Buttons only is default. Voice recordings processed outside India.</p>
                     </div>
                   </div>
                 </div>
@@ -256,7 +257,7 @@ export const WorkerApp: React.FC = () => {
               <div className="space-y-2 pt-2">
                 <button
                   onClick={() => setScreen('home')}
-                  className="w-full h-14 rounded-xl bg-[#0F5FA8] text-white font-bold text-base shadow-sm flex flex-col items-center justify-center"
+                  className="w-full h-14 rounded-xl bg-[#0F5FA8] text-white font-bold text-base shadow-sm flex flex-col items-center justify-center cursor-pointer"
                 >
                   <span className="font-telugu text-lg leading-tight">అంగీకరిస్తున్నాను (బటన్లు మాత్రమే)</span>
                   <span className="text-xs font-normal opacity-90">Agree, buttons only (Default)</span>
@@ -264,9 +265,16 @@ export const WorkerApp: React.FC = () => {
 
                 <button
                   onClick={() => setScreen('home')}
-                  className="w-full h-12 rounded-xl bg-[#F4F5F7] hover:bg-slate-200 text-[#1B1F24] font-semibold text-xs border border-[#D9DDE2]"
+                  className="w-full h-12 rounded-xl bg-[#F4F5F7] hover:bg-slate-200 text-[#1B1F24] font-semibold text-xs border border-[#D9DDE2] cursor-pointer"
                 >
                   Agree and turn on voice
+                </button>
+
+                <button
+                  onClick={() => setScreen('home')}
+                  className="w-full h-10 rounded-xl bg-white hover:bg-red-50 text-[#B42318] font-semibold text-xs border border-red-200 cursor-pointer transition-colors"
+                >
+                  సమ్మతి ఉపసంహరణ / Withdraw Consent (Opt Out)
                 </button>
               </div>
             </div>
@@ -424,8 +432,10 @@ export const WorkerApp: React.FC = () => {
                 <button
                   onMouseDown={() => setSosHolding(true)}
                   onMouseUp={() => setSosHolding(false)}
+                  onMouseLeave={() => setSosHolding(false)}
                   onTouchStart={() => setSosHolding(true)}
                   onTouchEnd={() => setSosHolding(false)}
+                  onTouchCancel={() => setSosHolding(false)}
                   className="w-full h-24 sm:h-28 rounded-2xl bg-[#B42318] hover:bg-[#9B1E14] active:bg-[#83180F] text-white font-bold shadow-lg flex flex-col items-center justify-center relative overflow-hidden transition-all"
                 >
                   {/* Visual 1-second filling ring / bar */}
@@ -485,10 +495,11 @@ export const WorkerApp: React.FC = () => {
               <div className="space-y-3">
                 <button
                   onClick={() => {
+                    setCheckInStatus('Recorded: All Good (అవును, బాగున్నాను) • 10m Heat Buffer Scheduled');
                     submitWorkerHeatCheck('ok');
                     setScreen('rest_timer');
                   }}
-                  className="w-full h-20 rounded-xl bg-[#1E7A46] text-white font-bold shadow-md flex flex-col items-center justify-center"
+                  className="w-full h-20 rounded-xl bg-[#1E7A46] hover:bg-[#186338] text-white font-bold shadow-md flex flex-col items-center justify-center cursor-pointer transition-colors"
                 >
                   <span className="font-telugu text-2xl leading-none">అవును, నేను బాగున్నాను</span>
                   <span className="text-xs font-normal opacity-90">Yes, I am okay (10m buffered rest)</span>
@@ -496,10 +507,11 @@ export const WorkerApp: React.FC = () => {
 
                 <button
                   onClick={() => {
+                    setCheckInStatus('Assistance Requested (సహాయం పంపబడింది) • Supervisor Alerted');
                     submitWorkerHeatCheck('not_okay');
                     setScreen('rest_timer');
                   }}
-                  className="w-full h-20 rounded-xl bg-[#B42318] text-white font-bold shadow-md flex flex-col items-center justify-center"
+                  className="w-full h-20 rounded-xl bg-[#B42318] hover:bg-[#9B1E14] text-white font-bold shadow-md flex flex-col items-center justify-center cursor-pointer transition-colors"
                 >
                   <span className="font-telugu text-2xl leading-none">బాగా లేదు (సహాయం కావాలి)</span>
                   <span className="text-xs font-normal opacity-90">Not okay (Request supervisor assistance)</span>
@@ -516,6 +528,12 @@ export const WorkerApp: React.FC = () => {
           {/* C3. Rest Timer */}
           {screen === 'rest_timer' && (
             <div className="p-6 flex-1 flex flex-col justify-between items-center text-center space-y-4">
+              {checkInStatus && (
+                <div className="w-full py-2 px-3 rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-semibold flex items-center justify-center gap-1.5 shadow-2xs">
+                  <CheckCircle2 size={16} className="text-[#1E7A46] shrink-0" />
+                  <span>{checkInStatus}</span>
+                </div>
+              )}
               <div className="space-y-1">
                 <h2 className="font-telugu text-2xl font-bold text-[#1B1F24]">
                   విశ్రాంతి తీసుకోండి
@@ -681,7 +699,7 @@ export const WorkerApp: React.FC = () => {
                 <h2 className="font-telugu text-2xl font-bold text-[#B42318]">
                   SOS పంపబడింది!
                 </h2>
-                <p className="text-xs text-[#5B636E]">Emergency stop signal dispatched without AI models</p>
+                <p className="text-xs text-[#5B636E]">Supervisor alerted immediately without AI models</p>
               </div>
 
               {/* Status Ladder */}

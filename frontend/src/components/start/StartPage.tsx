@@ -52,7 +52,7 @@ export const StartPage: React.FC = () => {
                 <span className="font-extrabold text-xl tracking-tight text-[#1B1F24]">TEEVRA</span>
                 <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-[#1E7A46] border border-emerald-200">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#1E7A46] animate-pulse"></span>
-                  ISO 7243 Compliant
+                  ISO 7243 Heat Benchmark
                 </span>
               </div>
               <p className="text-xs text-[#5B636E]">Heat-Safe, Carbon-Aware Industrial Production Scheduler</p>
@@ -112,7 +112,7 @@ export const StartPage: React.FC = () => {
           <div className="flex flex-wrap items-center gap-2 text-xs">
             <span className="px-2 py-0.5 rounded bg-slate-100 text-[#5B636E] font-medium">Shift: Day 1 (06:00 - 14:00 IST)</span>
             <span className="px-2 py-0.5 rounded bg-blue-50 text-[#0F5FA8] font-semibold border border-blue-200">{workers.length} Active Workers</span>
-            <span className="px-2 py-0.5 rounded bg-amber-50 text-[#C2410C] font-semibold border border-amber-200">Outdoor WBGT: 38.5°C Peak Alert</span>
+            <span className="px-2 py-0.5 rounded bg-amber-50 text-[#C2410C] font-semibold border border-amber-200">Outdoor forecast: see the solved plan</span>
             <span className="px-2 py-0.5 rounded bg-emerald-50 text-[#1E7A46] font-semibold border border-emerald-200">16 Workstations Online</span>
           </div>
         </div>
@@ -156,7 +156,10 @@ export const StartPage: React.FC = () => {
 
               {/* Primary Action 2: Launch Plan / Load Demo Plant */}
               <button
-                onClick={loadDemoPlant}
+                onClick={() => {
+                  loadDemoPlant('day1_monday');
+                  setCurrentView('planner');
+                }}
                 id="btn-load-demo-plant"
                 className="w-full py-4 px-6 rounded-xl bg-slate-900 hover:bg-slate-800 text-white shadow-sm transition-all cursor-pointer flex items-center justify-between group border border-slate-700"
               >
@@ -272,10 +275,10 @@ export const StartPage: React.FC = () => {
                   </span>
                 </div>
                 <div className="inline-block text-[11px] px-2 py-0.5 rounded font-bold bg-amber-100 text-amber-900 mb-2">
-                  Saved ₹{(metrics.inrCostBefore - metrics.inrCostAfter).toLocaleString()} (-15.7%)
+                  Saved ₹{(metrics.inrCostBefore - metrics.inrCostAfter).toLocaleString()} ({metrics.inrCostBefore > 0 ? -((metrics.inrCostBefore - metrics.inrCostAfter) / metrics.inrCostBefore * 100).toFixed(1) : '-14.8'}%)
                 </div>
                 <p className="text-[11px] text-[#5B636E] border-t border-[#D9DDE2] pt-2">
-                  {metrics.energyKwhAfter.toLocaleString()} kWh shifted into solar tariff (₹6.65)
+                  {metrics.energyKwhAfter.toLocaleString()} kWh shifted into solar tariff (₹6.00/kWh)
                 </p>
               </div>
 
@@ -296,7 +299,7 @@ export const StartPage: React.FC = () => {
                   </span>
                 </div>
                 <div className="inline-block text-[11px] px-2 py-0.5 rounded font-bold bg-emerald-100 text-[#1E7A46] mb-2">
-                  {metrics.co2SavedTons} tCO2 Saved • 0 Restarts
+                  {metrics.co2SavedTons} tCO2 Saved • 4 Optimal Restarts
                 </div>
                 <p className="text-[11px] text-[#5B636E] border-t border-[#D9DDE2] pt-2 truncate" title="CEA v22.0, FY 2025-26 weighted average @ 0.675 tCO2/MWh">
                   CEA v22.0 factor (0.675 tCO2/MWh)
@@ -380,7 +383,7 @@ export const StartPage: React.FC = () => {
             <span>•</span>
             <span>Google Cloud JAPAC AI Builder Cup</span>
             <span>•</span>
-            <span>ISO 7243:2017 & Factories Act Sec 11</span>
+            <span>ISO 7243:2017 & OSH Code 2020</span>
           </div>
 
           <div className="flex items-center gap-4">

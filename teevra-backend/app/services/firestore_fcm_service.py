@@ -95,8 +95,8 @@ class FirestoreFCMService:
         self.update_station_state(
             station_id,
             {
-                "status": "EMERGENCY_HALTED",
-                "alert": f"HALT: SOS triggered. Machines {machines_halted} stopped immediately.",
+                "status": "EMERGENCY_ALERTED",
+                "alert": f"EMERGENCY: SOS triggered at {station_id}. Supervisor & EHS Head alerted immediately.",
             },
         )
         return True

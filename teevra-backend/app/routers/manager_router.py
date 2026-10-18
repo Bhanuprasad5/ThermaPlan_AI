@@ -30,6 +30,107 @@ from app.services.weather_integrator import weather_integrator
 
 router = APIRouter(prefix="/api/v1/manager", tags=["Manager Core Scheduler"])
 
+CURRENT_ACTIVE_ROSTERS: list[WorkstationRoster] = []
+CURRENT_ACTIVE_WORKERS: list[dict] = []
+
+_DATA_ROOT = Path(__file__).resolve().parent.parent / "data"
+_DAY_PACKAGES = [
+    {
+        "day_id": "day1_monday",
+        "label": "Day 1 — Monday (Aerospace & Defense melt)",
+        "folder": "Day 1 - Monday",
+        "orders": "day1_monday_orders.csv",
+        "roster": "day1_monday_workers_roster_260.csv",
+        "tariff": "day1_monday_tgspdcl_tariff.csv",
+    },
+    {
+        "day_id": "day2_tuesday",
+        "label": "Day 2 — Tuesday (EV powertrain)",
+        "folder": "Day 2 - Tuesday",
+        "orders": "day2_tuesday_orders.csv",
+        "roster": "day2_tuesday_workers_roster_255.csv",
+        "tariff": "day2_tuesday_tgspdcl_tariff.csv",
+    },
+    {
+        "day_id": "day3_wednesday",
+        "label": "Day 3 — Wednesday (Railways bogie & axles)",
+        "folder": "Day 3 - Wednesday",
+        "orders": "day3_wednesday_orders.csv",
+        "roster": "day3_wednesday_workers_roster_265.csv",
+        "tariff": "day3_wednesday_tgspdcl_tariff.csv",
+    },
+    {
+        "day_id": "day4_thursday",
+        "label": "Day 4 — Thursday (Wind turbine gears)",
+        "folder": "Day 4 - Thursday",
+        "orders": "day4_thursday_orders.csv",
+        "roster": "day4_thursday_workers_roster_258.csv",
+        "tariff": "day4_thursday_tgspdcl_tariff.csv",
+    },
+    {
+        "day_id": "day5_friday",
+        "label": "Day 5 — Friday (Orthopedic titanium)",
+        "folder": "Day 5 - Friday",
+        "orders": "day5_friday_orders.csv",
+        "roster": "day5_friday_workers_roster_270.csv",
+        "tariff": "day5_friday_tgspdcl_tariff.csv",
+    },
+]
+
+
+def _read_package_csv(folder: str, sub: str, filename: str) -> str:
+    path = _DATA_ROOT / folder / sub / filename
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail=f"Template file missing: {filename}")
+    return path.read_text(encoding="utf-8")
+
+
+@router.get("/available-templates")
+async def list_available_templates():
+    """Shipped day packages the manager can load instead of dragging files."""
+    items = []
+    for pkg in _DAY_PACKAGES:
+        orders_path = _DATA_ROOT / pkg["folder"] / "Orders" / pkg["orders"]
+        items.append(
+            {
+                "day_id": pkg["day_id"],
+                "label": pkg["label"],
+                "orders_filename": pkg["orders"],
+                "roster_filename": pkg["roster"],
+                "tariff_filename": pkg["tariff"],
+                "available": orders_path.is_file(),
+                "includes_pdf": False,
+            }
+        )
+    return {
+        "templates": items,
+        "note": "Loads orders, worker roster and tariff spreadsheets only. Reference PDFs stay a manual upload.",
+    }
+
+
+@router.get("/available-templates/{day_id}")
+async def load_available_template(day_id: str):
+    """Return the CSV text for one shipped day. Does not include PDFs."""
+    pkg = next((p for p in _DAY_PACKAGES if p["day_id"] == day_id), None)
+    if pkg is None:
+        raise HTTPException(status_code=404, detail=f"Unknown template day_id: {day_id}")
+    orders_csv = _read_package_csv(pkg["folder"], "Orders", pkg["orders"])
+    roster_csv = _read_package_csv(pkg["folder"], "Worker_Rosters", pkg["roster"])
+    tariff_csv = _read_package_csv(pkg["folder"], "Tariffs", pkg["tariff"])
+    return {
+        "day_id": pkg["day_id"],
+        "label": pkg["label"],
+        "source": "shipped_demo_package",
+        "orders_filename": pkg["orders"],
+        "orders_csv": orders_csv,
+        "orders_rows": max(0, orders_csv.count("\n") - (0 if orders_csv.endswith("\n") else 0)),
+        "roster_filename": pkg["roster"],
+        "roster_csv": roster_csv,
+        "tariff_filename": pkg["tariff"],
+        "tariff_csv": tariff_csv,
+        "pdf_included": False,
+    }
+
 
 # Realistic 16 Workstations Roster for Telangana Metal Works
 DEFAULT_DEMO_ROSTERS: list[WorkstationRoster] = [
@@ -278,8 +379,12 @@ DEFAULT_DEMO_ROSTERS: list[WorkstationRoster] = [
 
 def _load_default_orders() -> list[PlantOrder]:
     csv_candidates = [
-        Path("D:/ThermaPlan_AI/sample_manager_uploads/plant_orders_telangana.csv"),
-        Path(__file__).resolve().parent.parent.parent / "sample_manager_uploads" / "plant_orders_telangana.csv",
+        Path(__file__).resolve().parent.parent / "data" / "plant_orders_telangana.csv",
+        Path(__file__).resolve().parent.parent / "data" / "Reference_and_Standards" / "plant_orders_telangana.csv",
+        Path(__file__).resolve().parent.parent / "data" / "Day 1 - Monday" / "Orders" / "day1_monday_orders.csv",
+        Path(__file__).resolve().parent.parent.parent / "sample_manager_uploads" / "Reference_and_Standards" / "plant_orders_telangana.csv",
+        Path(__file__).resolve().parent.parent.parent / "sample_manager_uploads" / "Day 1 - Monday" / "Orders" / "day1_monday_orders.csv",
+        Path("D:/ThermaPlan_AI/sample_manager_uploads/Reference_and_Standards/plant_orders_telangana.csv"),
     ]
     for p in csv_candidates:
         if p.exists():
@@ -501,7 +606,97 @@ async def solve_morning_plan(config: PlanningConfigRequest | None = None):
             detail=f"Invalid slot_duration_minutes {plan_config.slot_duration_minutes}. Must be one of: {VALID_SLOT_MINUTES}"
         )
 
-    orders = bq_service.get_plant_orders()
+    orders: list[PlantOrder] = []
+    if plan_config.orders_csv and len(plan_config.orders_csv.strip()) > 0:
+        try:
+            df = pd.read_csv(io.StringIO(plan_config.orders_csv))
+            col_map = {str(c).strip().lower(): c for c in df.columns}
+            
+            def get_val(row, aliases, default=None):
+                for a in aliases:
+                    if a in col_map:
+                        v = row[col_map[a]]
+                        if pd.notna(v):
+                            return v
+                return default
+
+            for idx, row in df.iterrows():
+                order_id = str(get_val(row, ["order_id", "id", "order", "orderid"], f"ORD_{idx+1}"))
+                job_name = str(get_val(row, ["job_name", "job", "name", "jobname", "description"], f"Job #{order_id}"))
+                machine_id = str(get_val(row, ["machine_id", "machine", "machineid"], "CNC_1")).upper()
+                station_id = str(get_val(row, ["station_id", "station", "stationid", "station_name"], f"st_{machine_id.lower()}"))
+                
+                try:
+                    duration_mins = int(float(get_val(row, ["duration_mins", "duration", "mins", "duration_minutes"], 120)))
+                except (ValueError, TypeError):
+                    duration_mins = 120
+                    
+                try:
+                    duration_slots = int(float(get_val(row, ["duration_slots", "slots"], max(1, duration_mins // 15))))
+                except (ValueError, TypeError):
+                    duration_slots = max(1, duration_mins // 15)
+                    
+                try:
+                    kwh_per_op = float(get_val(row, ["kwh_per_op", "kwh", "kwh_op", "energy_kwh"], 100.0))
+                except (ValueError, TypeError):
+                    kwh_per_op = 100.0
+                    
+                try:
+                    restart_kwh = float(get_val(row, ["restart_kwh", "restart"], 10.0))
+                except (ValueError, TypeError):
+                    restart_kwh = 10.0
+                    
+                raw_tag = str(get_val(row, ["load_tag", "tag", "flexibility"], "shiftable")).lower()
+                load_tag = raw_tag if raw_tag in ["fixed", "shiftable", "interruptible"] else "shiftable"
+                splittable = str(get_val(row, ["splittable", "can_split"], "false")).lower() in ["true", "1", "yes"]
+                
+                try:
+                    due_slot = int(float(get_val(row, ["due_slot", "due"], 191)))
+                except (ValueError, TypeError):
+                    due_slot = 191
+                    
+                is_crit = str(get_val(row, ["is_critical_melt", "critical_melt", "critical", "is_critical"], "false")).lower() in ["true", "1", "yes"]
+                upload_batch = str(get_val(row, ["upload_batch_id", "batch_id", "batch"], "custom_manager_upload"))
+                
+                orders.append(PlantOrder(
+                    upload_batch_id=upload_batch,
+                    order_id=order_id,
+                    job_name=job_name,
+                    machine_id=machine_id,
+                    station_id=station_id,
+                    routing_seq=1,
+                    duration_mins=duration_mins,
+                    duration_slots=duration_slots,
+                    kwh_per_op=kwh_per_op,
+                    restart_kwh=restart_kwh,
+                    load_tag=load_tag,
+                    splittable=splittable,
+                    due_slot=due_slot,
+                    is_critical_melt=is_crit
+                ))
+        except Exception as e:
+            logger.warning(f"Failed parsing uploaded orders CSV: {e}")
+            orders = []
+    elif plan_config.day_id:
+        day_dir_map = {
+            "day1_monday": ("Day 1 - Monday", "day1_monday_orders.csv"),
+            "day2_tuesday": ("Day 2 - Tuesday", "day2_tuesday_orders.csv"),
+            "day3_wednesday": ("Day 3 - Wednesday", "day3_wednesday_orders.csv"),
+            "day4_thursday": ("Day 4 - Thursday", "day4_thursday_orders.csv"),
+            "day5_friday": ("Day 5 - Friday", "day5_friday_orders.csv"),
+        }
+        if plan_config.day_id in day_dir_map:
+            folder, fname = day_dir_map[plan_config.day_id]
+            day_path = Path(__file__).resolve().parent.parent / "data" / folder / "Orders" / fname
+            if day_path.exists():
+                try:
+                    df = pd.read_csv(day_path)
+                    orders = [PlantOrder(**row.to_dict()) for _, row in df.iterrows()]
+                except Exception:
+                    orders = []
+
+    if not orders:
+        orders = bq_service.get_plant_orders()
     if not orders:
         orders = DEFAULT_DEMO_ORDERS
         bq_service.save_plant_orders(orders)
@@ -567,7 +762,95 @@ async def get_morning_plan():
 @router.post("/approve-and-solve", response_model=SchedulePlanResponse)
 async def approve_and_solve(constraints: dict | None = None):
     """Frontend compatibility endpoint for approving parsed rules and solving."""
-    return await solve_morning_plan()
+    c = constraints or {}
+    cfg = PlanningConfigRequest(
+        horizon_hours=c.get("horizon_hours", 48),
+        slot_duration_minutes=c.get("slot_duration_minutes", 15),
+        orders_csv=c.get("orders_csv"),
+        day_id=c.get("day_id"),
+    )
+    return await solve_morning_plan(cfg)
+
+
+def _illustrative_tariff_periods() -> list[dict]:
+    return [
+        {
+            "name": "Solar Hours (Illustrative tariff, simulated)",
+            "start_hour": 10,
+            "end_hour": 16,
+            "rate_inr_per_kwh": 6.0,
+            "description": "Illustrative tariff, simulated",
+        },
+        {
+            "name": "Evening Peak (Illustrative tariff, simulated)",
+            "start_hour": 18,
+            "end_hour": 22,
+            "rate_inr_per_kwh": 9.0,
+            "description": "Illustrative tariff, simulated",
+        },
+        {
+            "name": "Standard (Illustrative tariff, simulated)",
+            "start_hour": 0,
+            "end_hour": 24,
+            "rate_inr_per_kwh": 7.5,
+            "description": "Illustrative tariff, simulated",
+        },
+    ]
+
+
+def _deterministic_constraints_from_text(text: str) -> list[dict]:
+    """Keyword parser used only when Gemini did not return a function call."""
+    lowered = (text or "").lower()
+    paint = "paint" in lowered
+    furnace = "furnace" in lowered
+    rows: list[dict] = []
+    if paint and not furnace:
+        rows.append({
+            "constraint_id": "CNS-PAINT-ONLY",
+            "station": "paint_oven_bay",
+            "work_class": 2,
+            "acclimatised": True,
+            "wbgt_limit_c": 28.0,
+            "frozen_window_hours": 0,
+            "unsure": False,
+            "source": "Deterministic fallback, no Gemini call",
+        })
+    if furnace and not paint:
+        no_pour = "15:00" in lowered or "15.00" in lowered or "no pour" in lowered
+        rows.append({
+            "constraint_id": "CNS-FURNACE-ONLY",
+            "station": "furnace_manual",
+            "work_class": 3,
+            "acclimatised": True,
+            "wbgt_limit_c": 26.0,
+            "frozen_window_hours": 2,
+            "no_pour_after_hour": 15 if no_pour else None,
+            "unsure": False,
+            "source": "Deterministic fallback, no Gemini call",
+        })
+    if "line 9" in lowered or "unknown station" in lowered:
+        rows.append({
+            "constraint_id": "CNS-UNSURE-STATION",
+            "station": "Please check",
+            "work_class": None,
+            "acclimatised": None,
+            "wbgt_limit_c": None,
+            "frozen_window_hours": None,
+            "unsure": True,
+            "source": "Deterministic fallback, no Gemini call",
+        })
+    if not rows:
+        rows.append({
+            "constraint_id": "CNS-PLANT-ISO",
+            "station": "all_manual_stations",
+            "work_class": None,
+            "acclimatised": True,
+            "wbgt_limit_c": None,
+            "frozen_window_hours": 2,
+            "unsure": True,
+            "source": "Deterministic fallback, no Gemini call",
+        })
+    return rows
 
 
 @router.post("/parse-rules")
@@ -576,71 +859,66 @@ async def parse_rules_endpoint(
     pdf_file: UploadFile | None = File(None),
     natural_language_rule: str = Form("Keep every station within its ISO 7243 limit, keep output at 98% or more, and enforce a 2-hour frozen window."),
 ):
-    """Frontend compatibility endpoint for Gemini rule parsing."""
+    """Gemini function-calling extraction. Falls back with an explicit source label."""
+    import time
+    from app.config import get_settings
+
+    started = time.perf_counter()
+    gemini_res = None
+    source = "deterministic_fallback"
+    model_version = None
     try:
         gemini_res = await gemini_flash_service.extract_constraints_from_memo(natural_language_rule)
     except Exception:
         gemini_res = None
 
+    latency_ms = int((time.perf_counter() - started) * 1000)
+    c_list: list[dict] = []
+    if gemini_res and (gemini_res.shift_rules or gemini_res.machine_lockouts):
+        source = "gemini"
+        model_version = get_settings().GEMINI_FLASH_MODEL
+        for idx, rule in enumerate(gemini_res.shift_rules, 1):
+            c_list.append({
+                "constraint_id": f"CNS-GEMINI-SHIFT-{idx:02d}",
+                "station": rule.shift_name,
+                "work_class": None,
+                "acclimatised": True,
+                "wbgt_limit_c": None,
+                "frozen_window_hours": 2,
+                "mandatory_rest_minutes": rule.mandatory_rest_minutes,
+                "unsure": False,
+                "source": "gemini",
+            })
+        for idx, lock in enumerate(gemini_res.machine_lockouts, 1):
+            c_list.append({
+                "constraint_id": f"CNS-GEMINI-LOCK-{idx:02d}",
+                "station": lock.machine_id,
+                "work_class": None,
+                "acclimatised": True,
+                "wbgt_limit_c": None,
+                "frozen_window_hours": 2,
+                "lockout_start_slot": lock.lockout_start_slot,
+                "lockout_end_slot": lock.lockout_end_slot,
+                "unsure": False,
+                "source": "gemini",
+            })
+    if not c_list:
+        source = "deterministic_fallback"
+        model_version = None
+        c_list = _deterministic_constraints_from_text(natural_language_rule)
+
     return {
-        "constraints": [
-            {
-                "constraint_id": "CNS-FURNACE-CLASS3",
-                "station": "furnace_manual",
-                "work_class": 3,
-                "acclimatised": True,
-                "wbgt_limit_c": 26.0,
-                "frozen_window_hours": 2,
-                "confidence": 0.99,
-                "source": "ISO 7243:2017 Table A.1",
-            },
-            {
-                "constraint_id": "CNS-CNC-CLASS1",
-                "station": "cnc_bay_1",
-                "work_class": 1,
-                "acclimatised": True,
-                "wbgt_limit_c": 30.0,
-                "frozen_window_hours": 2,
-                "confidence": 0.97,
-                "source": "ISO 7243:2017 Table A.1",
-            },
-            {
-                "constraint_id": "CNS-OVEN-CLASS2",
-                "station": "paint_oven_bay",
-                "work_class": 2,
-                "acclimatised": True,
-                "wbgt_limit_c": 28.0,
-                "frozen_window_hours": 0,
-                "confidence": 0.82,
-                "source": "ISO 7243:2017 Table A.1",
-            },
-        ],
-        "tariff_periods": [
-            {
-                "name": "Solar Hours",
-                "start_hour": 10,
-                "end_hour": 16,
-                "rate_inr_per_kwh": 6.0,
-                "description": "TGSPDCL 20% solar concession — Clause 4.2b",
-            },
-            {
-                "name": "Evening Peak",
-                "start_hour": 18,
-                "end_hour": 22,
-                "rate_inr_per_kwh": 9.0,
-                "description": "Peak demand surcharge",
-            },
-            {
-                "name": "Standard",
-                "start_hour": 0,
-                "end_hour": 24,
-                "rate_inr_per_kwh": 7.5,
-                "description": "Base HT-I industrial tariff",
-            },
-        ],
+        "constraints": c_list,
+        "tariff_periods": _illustrative_tariff_periods(),
         "frozen_window_hours": 2,
-        "gemini_model": "gemini-3.8-flash",
+        "gemini_model": model_version,
+        "model_version": model_version,
+        "region": get_settings().VERTEX_REGION if source == "gemini" else None,
+        "source": source,
+        "latency_ms": latency_ms,
         "extraction_timestamp": datetime.now(UTC).isoformat(),
+        "is_fallback": source != "gemini",
+        "label": "Gemini" if source == "gemini" else "Deterministic fallback, no Gemini call",
     }
 
 
@@ -652,16 +930,28 @@ async def get_plan_citations(plan_id: str):
         return [c.model_dump() for c in plan.citations]
     return [
         {
-            "source_title": "TGSPDCL FY2025-26 Retail Supply Tariff Order",
-            "clause": "Clause 4.2b: Solar Hours Concession",
-            "uri": "gs://thermaplan-ai-teevra-uploads/citations/TGSPDCL_FY26_Tariff_Order.pdf",
-            "snippet": "HT-I Industrial consumers shall receive a 20% concession on the base energy charge (₹7.50 down to ₹6.00/kWh) between 10:00 hrs and 16:00 hrs to incentivize solar consumption.",
+            "source_title": "ISO 7243:2017 Table A.1 reference values, acclimatised (voluntary, not statutory)",
+            "clause": "Table A.1",
+            "uri": "https://www.iso.org/standard/66787.html",
+            "snippet": "Reference WBGT limits by metabolic class for acclimatised workers. Voluntary standard, not a statute.",
         },
         {
-            "source_title": "ISO 7243:2017 Ergonomics of the Thermal Environment",
-            "clause": "Table A.1: Reference Limits for Metabolic Rates",
-            "uri": "gs://thermaplan-ai-teevra-uploads/citations/ISO_7243_2017_Standard_Summary.pdf",
-            "snippet": "For high metabolic rate work (Class 3, 415W, e.g. heavy casting & furnace tending), the maximum WBGT threshold is 26.0°C for acclimatised personnel.",
+            "source_title": "CEA CO2 Baseline Database v22.0, 0.675 tCO2/MWh",
+            "clause": "Grid average emission factor",
+            "uri": "https://cea.nic.in/cdm-co2-baseline-database/",
+            "snippet": "National grid factor used for honest CO2. Time-shifting with no kWh drop is 0.00 tCO2.",
+        },
+        {
+            "source_title": "Illustrative tariff, simulated",
+            "clause": "Not the published TGSPDCL FY2025-26 schedule",
+            "uri": "",
+            "snippet": "Demo rates: base 7.50, solar window 6.00 (10:00-16:00), evening peak 9.00 (18:00-22:00). Labelled illustrative.",
+        },
+        {
+            "source_title": "OSH Code 2020 and plant heat policy",
+            "clause": "Team summary",
+            "uri": "https://labour.gov.in",
+            "snippet": "Team summary of occupational safety duties. Not a clause citation from a tariff order.",
         },
     ]
 

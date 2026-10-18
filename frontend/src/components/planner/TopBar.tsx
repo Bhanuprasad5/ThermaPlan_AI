@@ -16,6 +16,7 @@ import {
   Smartphone,
   Users,
   LogOut,
+  Calendar,
 } from 'lucide-react';
 import { usePlant } from '../../context/PlantContext';
 import { AreaAlertBadge } from '../common/AreaAlertBadge';
@@ -37,6 +38,8 @@ export const TopBar: React.FC = () => {
     triggerBreakdown,
     backendConnected,
     navigate,
+    activeDatasetDay,
+    loadDemoPlant,
   } = usePlant();
 
   const [showSimMenu, setShowSimMenu] = useState(false);
@@ -60,9 +63,25 @@ export const TopBar: React.FC = () => {
 
         <span className="text-[#D9DDE2]">|</span>
 
-        <div className="flex items-center gap-1.5 text-xs">
+        <div className="flex items-center gap-2 text-xs">
           <span className="font-semibold text-[#1B1F24] whitespace-nowrap">Telangana Metal Works</span>
-          <span className="text-[#5B636E] whitespace-nowrap">Day 1, {weather.timeString}</span>
+          <span className="text-[#D9DDE2]">|</span>
+          <div className="flex items-center gap-1.5 bg-[#F4F5F7] px-2 py-1 rounded border border-[#D9DDE2]">
+            <Calendar size={13} className="text-[#0F5FA8]" />
+            <select
+              value={activeDatasetDay}
+              onChange={(e) => loadDemoPlant(e.target.value)}
+              className="bg-transparent font-bold text-xs text-[#1B1F24] outline-hidden cursor-pointer"
+              title="Switch Manufacturing Day"
+            >
+              <option value="day1_monday">Day 1: Monday (Peak Heat 33.5°C)</option>
+              <option value="day2_tuesday">Day 2: Tuesday (High Solar 850 W/m²)</option>
+              <option value="day3_wednesday">Day 3: Wednesday (Moderate 29.2°C)</option>
+              <option value="day4_thursday">Day 4: Thursday (Staggered Shift)</option>
+              <option value="day5_friday">Day 5: Friday (Expedited Deliveries)</option>
+            </select>
+          </div>
+          <span className="text-[#5B636E] whitespace-nowrap hidden lg:inline">{weather.timeString}</span>
         </div>
       </div>
 

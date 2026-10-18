@@ -45,6 +45,8 @@ class PlanningConfigRequest(BaseModel):
     )
     enforce_heat_safety: bool = Field(default=True)
     enforce_tariff_optimization: bool = Field(default=True)
+    orders_csv: str | None = Field(default=None, description="Optional raw CSV of plant orders for custom solve")
+    day_id: str | None = Field(default=None, description="Optional day identifier (e.g. day1_monday, day2_tuesday)")
 
     @property
     def total_slots(self) -> int:

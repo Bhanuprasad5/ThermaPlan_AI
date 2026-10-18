@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AlertOctagon, Phone, Copy, Check, ShieldAlert } from 'lucide-react';
 import { usePlant } from '../../context/PlantContext';
+import { maskPhone } from '../../utils/mapper';
 
 export const SosBand: React.FC = () => {
   const { activeSos, acknowledgeSos } = usePlant();
@@ -53,7 +54,7 @@ export const SosBand: React.FC = () => {
         {/* Suresh's Phone Number with Copy */}
         <div className="flex items-center gap-1.5 bg-black/25 px-2.5 py-1.5 rounded text-xs font-mono">
           <Phone size={13} className="text-white/80" />
-          <span>{worker.phone}</span>
+          <span>{maskPhone(worker.phone)}</span>
           <button
             onClick={copyPhoneNumber}
             className="ml-1 p-1 hover:bg-white/20 rounded transition-colors"

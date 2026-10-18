@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { usePlant } from '../../context/PlantContext';
 import { AlertItem } from '../../types';
+import { maskPhone } from '../../utils/mapper';
 
 interface SupervisorModeProps {
   onExit: () => void;
@@ -83,7 +84,7 @@ export const SupervisorMode: React.FC<SupervisorModeProps> = ({ onExit }) => {
             <div>
               <div className="text-xl font-bold">{activeSos.worker.name}</div>
               <div className="text-sm opacity-90">{activeSos.station.nameEn}</div>
-              <div className="text-xs font-mono mt-1 opacity-80">{activeSos.worker.phone}</div>
+              <div className="text-xs font-mono mt-1 opacity-80">{maskPhone(activeSos.worker.phone)}</div>
             </div>
 
             <div className="space-y-2">

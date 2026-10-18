@@ -97,25 +97,25 @@ export const ContextPanel: React.FC = () => {
                       <span>Gemini Extraction</span>
                     </span>
                     <span className="text-[10px] font-mono bg-white px-1.5 py-0.5 rounded border border-[#D9DDE2] text-[#5B636E]">
-                      {activeProposal.aiDetails.modelVersion}
+                      {activeProposal.aiDetails?.modelVersion || 'gemini-3.8-flash'}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 text-[11px]">
                     <div>
                       <span className="text-[#5B636E]">Hazard:</span>{' '}
-                      <strong className="text-[#1B1F24]">{activeProposal.aiDetails.hazard}</strong>
+                      <strong className="text-[#1B1F24]">{activeProposal.aiDetails?.hazard || 'Solar Thermal Peak'}</strong>
                     </div>
                     <div>
                       <span className="text-[#5B636E]">Station:</span>{' '}
-                      <strong className="text-[#1B1F24]">{activeProposal.aiDetails.station}</strong>
+                      <strong className="text-[#1B1F24]">{activeProposal.aiDetails?.station || 'Furnace Bay'}</strong>
                     </div>
                   </div>
 
                   <div className="text-[10px] text-[#5B636E] pt-1 border-t border-[#D9DDE2] flex items-center justify-between">
                     <span>
-                      {activeProposal.aiDetails.isCached
-                        ? `Cached Gemini response, recorded ${activeProposal.aiDetails.recordedDate || 'Oct 17, 2026'}`
+                      {activeProposal.aiDetails?.isCached
+                        ? `Cached Gemini response, recorded ${activeProposal.aiDetails?.recordedDate || 'Oct 18, 2026'}`
                         : 'Real @google/genai API call'}
                     </span>
                     <button

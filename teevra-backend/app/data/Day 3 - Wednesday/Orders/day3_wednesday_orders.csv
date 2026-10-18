@@ -1,0 +1,46 @@
+upload_batch_id,order_id,job_name,machine_id,station_id,routing_seq,duration_mins,duration_slots,kwh_per_op,restart_kwh,load_tag,splittable,due_slot,is_critical_melt
+BATCH_WED_RAIL_03,ORD_RAIL_01,Indian Railways Heavy Bogie & Axles - High Temp Primary Melt (Batch #01),FURNACE_1,FURNACE_BAY,1,180,12,497.4,119.3,fixed,False,44,True
+BATCH_WED_RAIL_03,ORD_RAIL_02,Indian Railways Heavy Bogie & Axles - Precision Ingot Continuous Pour (Batch #02),FURNACE_2,FURNACE_BAY,1,150,10,402.3,98.4,fixed,False,42,True
+BATCH_WED_RAIL_03,ORD_RAIL_03,Indian Railways Heavy Bogie & Axles - Billet Induction Pre-Heating (Batch #03),FURNACE_3,FURNACE_BAY,1,210,14,443.3,108.0,fixed,False,49,True
+BATCH_WED_RAIL_03,ORD_RAIL_04,Pre-Sorted Scrap Staging & Charge Prep (Batch #04),CHARGING_BAY,FURNACE_BAY,1,120,8,106.7,14.7,fixed,False,37,False
+BATCH_WED_RAIL_03,ORD_RAIL_05,Heavy Gantry Milling Rough Stage (Batch #05),CNC_1,CNC_BAY,2,180,12,198.9,19.6,fixed,False,62,False
+BATCH_WED_RAIL_03,ORD_RAIL_06,5-Axis High-Tolerance Complex Contouring (Batch #06),CNC_2,CNC_BAY,3,240,16,222.9,26.2,shiftable,False,87,False
+BATCH_WED_RAIL_03,ORD_RAIL_07,Axial Journal High-Speed Lathe Turning (Batch #07),CNC_3,CNC_BAY,2,210,14,170.5,17.8,shiftable,False,83,False
+BATCH_WED_RAIL_03,ORD_RAIL_08,Multitasking Complex Flange Pocketing (Batch #08),CNC_4,CNC_BAY,2,180,12,158.3,14.4,shiftable,False,93,False
+BATCH_WED_RAIL_03,ORD_RAIL_09,Micro-Precision Diamond Honing & Deburr (Batch #09),CNC_5,CNC_BAY,3,120,8,87.3,10.5,shiftable,False,95,False
+BATCH_WED_RAIL_03,ORD_RAIL_10,Anti-Corrosive Thermal Barrier Coating (Batch #10),PAINT_BOOTH,PAINT_SHOP,4,180,12,244.4,30.2,shiftable,False,93,False
+BATCH_WED_RAIL_03,ORD_RAIL_11,Infrared Epoxy Powder Polymerization (Batch #11),OVEN_2,PAINT_SHOP,4,210,14,269.0,35.7,shiftable,False,112,False
+BATCH_WED_RAIL_03,ORD_RAIL_12,Controlled Atmosphere Vacuum Quench & Temper (Batch #12),HEAT_TREAT_1,OVEN_BAY,5,270,18,401.6,51.7,shiftable,False,118,False
+BATCH_WED_RAIL_03,ORD_RAIL_13,Robotic High-Torque Sub-Assembly Staging (Batch #13),ASSEMBLY_1,ASSEMBLY_BAY,6,150,10,46.4,8.2,fixed,False,127,False
+BATCH_WED_RAIL_03,ORD_RAIL_14,Final Structural Bolting & Fastener Torqueing (Batch #14),ASSEMBLY_2,ASSEMBLY_BAY,6,180,12,56.0,9.6,fixed,False,142,False
+BATCH_WED_RAIL_03,ORD_RAIL_15,Laser CMM Micron Scan & NDT Ultrasonic Check (Batch #15),QUALITY_INSPECT,QUALITY_BAY,7,90,6,29.2,5.1,shiftable,False,150,False
+BATCH_WED_RAIL_03,ORD_RAIL_16,Central Glycol Chiller Thermal Pre-Cooling (Batch #16),CHILLER_1,UTILITY_ROOM,1,240,16,218.3,9.9,interruptible,True,167,False
+BATCH_WED_RAIL_03,ORD_RAIL_17,Indian Railways Heavy Bogie & Axles - High Temp Primary Melt (Batch #17),FURNACE_1,FURNACE_BAY,1,180,12,503.6,119.8,fixed,False,87,True
+BATCH_WED_RAIL_03,ORD_RAIL_18,Indian Railways Heavy Bogie & Axles - Precision Ingot Continuous Pour (Batch #18),FURNACE_2,FURNACE_BAY,1,150,10,391.3,99.0,fixed,False,90,True
+BATCH_WED_RAIL_03,ORD_RAIL_19,Indian Railways Heavy Bogie & Axles - Billet Induction Pre-Heating (Batch #19),FURNACE_3,FURNACE_BAY,1,210,14,456.2,104.9,fixed,False,99,True
+BATCH_WED_RAIL_03,ORD_RAIL_20,Pre-Sorted Scrap Staging & Charge Prep (Batch #20),CHARGING_BAY,FURNACE_BAY,1,120,8,112.2,15.5,fixed,False,79,False
+BATCH_WED_RAIL_03,ORD_RAIL_21,Heavy Gantry Milling Rough Stage (Batch #21),CNC_1,CNC_BAY,2,180,12,192.6,19.2,fixed,False,113,False
+BATCH_WED_RAIL_03,ORD_RAIL_22,5-Axis High-Tolerance Complex Contouring (Batch #22),CNC_2,CNC_BAY,3,240,16,214.5,25.4,shiftable,False,136,False
+BATCH_WED_RAIL_03,ORD_RAIL_23,Axial Journal High-Speed Lathe Turning (Batch #23),CNC_3,CNC_BAY,2,210,14,177.6,17.2,shiftable,False,121,False
+BATCH_WED_RAIL_03,ORD_RAIL_24,Multitasking Complex Flange Pocketing (Batch #24),CNC_4,CNC_BAY,2,180,12,162.8,14.8,shiftable,False,139,False
+BATCH_WED_RAIL_03,ORD_RAIL_25,Micro-Precision Diamond Honing & Deburr (Batch #25),CNC_5,CNC_BAY,3,120,8,88.5,10.3,shiftable,False,146,False
+BATCH_WED_RAIL_03,ORD_RAIL_26,Anti-Corrosive Thermal Barrier Coating (Batch #26),PAINT_BOOTH,PAINT_SHOP,4,180,12,228.3,29.3,shiftable,False,140,False
+BATCH_WED_RAIL_03,ORD_RAIL_27,Infrared Epoxy Powder Polymerization (Batch #27),OVEN_2,PAINT_SHOP,4,210,14,276.7,35.2,shiftable,False,157,False
+BATCH_WED_RAIL_03,ORD_RAIL_28,Controlled Atmosphere Vacuum Quench & Temper (Batch #28),HEAT_TREAT_1,OVEN_BAY,5,270,18,392.9,49.7,shiftable,False,170,False
+BATCH_WED_RAIL_03,ORD_RAIL_29,Robotic High-Torque Sub-Assembly Staging (Batch #29),ASSEMBLY_1,ASSEMBLY_BAY,6,150,10,44.8,8.1,fixed,False,180,False
+BATCH_WED_RAIL_03,ORD_RAIL_30,Final Structural Bolting & Fastener Torqueing (Batch #30),ASSEMBLY_2,ASSEMBLY_BAY,6,180,12,55.0,9.8,fixed,False,191,False
+BATCH_WED_RAIL_03,ORD_RAIL_31,Laser CMM Micron Scan & NDT Ultrasonic Check (Batch #31),QUALITY_INSPECT,QUALITY_BAY,7,90,6,29.9,4.9,shiftable,False,191,False
+BATCH_WED_RAIL_03,ORD_RAIL_32,Central Glycol Chiller Thermal Pre-Cooling (Batch #32),CHILLER_1,UTILITY_ROOM,1,240,16,211.6,10.4,interruptible,True,191,False
+BATCH_WED_RAIL_03,ORD_RAIL_33,Indian Railways Heavy Bogie & Axles - High Temp Primary Melt (Batch #33),FURNACE_1,FURNACE_BAY,1,180,12,472.7,118.1,fixed,False,130,True
+BATCH_WED_RAIL_03,ORD_RAIL_34,Indian Railways Heavy Bogie & Axles - Precision Ingot Continuous Pour (Batch #34),FURNACE_2,FURNACE_BAY,1,150,10,378.6,94.8,fixed,False,144,True
+BATCH_WED_RAIL_03,ORD_RAIL_35,Indian Railways Heavy Bogie & Axles - Billet Induction Pre-Heating (Batch #35),FURNACE_3,FURNACE_BAY,1,210,14,441.5,112.4,fixed,False,143,True
+BATCH_WED_RAIL_03,ORD_RAIL_36,Pre-Sorted Scrap Staging & Charge Prep (Batch #36),CHARGING_BAY,FURNACE_BAY,1,120,8,108.0,14.7,fixed,False,129,False
+BATCH_WED_RAIL_03,ORD_RAIL_37,Heavy Gantry Milling Rough Stage (Batch #37),CNC_1,CNC_BAY,2,180,12,194.0,19.0,fixed,False,164,False
+BATCH_WED_RAIL_03,ORD_RAIL_38,5-Axis High-Tolerance Complex Contouring (Batch #38),CNC_2,CNC_BAY,3,240,16,223.3,25.4,shiftable,False,177,False
+BATCH_WED_RAIL_03,ORD_RAIL_39,Axial Journal High-Speed Lathe Turning (Batch #39),CNC_3,CNC_BAY,2,210,14,182.5,18.4,shiftable,False,169,False
+BATCH_WED_RAIL_03,ORD_RAIL_40,Multitasking Complex Flange Pocketing (Batch #40),CNC_4,CNC_BAY,2,180,12,154.8,14.5,shiftable,False,185,False
+BATCH_WED_RAIL_03,ORD_RAIL_41,Micro-Precision Diamond Honing & Deburr (Batch #41),CNC_5,CNC_BAY,3,120,8,89.3,10.0,shiftable,False,190,False
+BATCH_WED_RAIL_03,ORD_RAIL_42,Anti-Corrosive Thermal Barrier Coating (Batch #42),PAINT_BOOTH,PAINT_SHOP,4,180,12,237.7,29.1,shiftable,False,191,False
+BATCH_WED_RAIL_03,ORD_RAIL_43,Infrared Epoxy Powder Polymerization (Batch #43),OVEN_2,PAINT_SHOP,4,210,14,274.2,34.6,shiftable,False,191,False
+BATCH_WED_RAIL_03,ORD_RAIL_44,Controlled Atmosphere Vacuum Quench & Temper (Batch #44),HEAT_TREAT_1,OVEN_BAY,5,270,18,394.5,48.5,shiftable,False,191,False
+BATCH_WED_RAIL_03,ORD_RAIL_45,Robotic High-Torque Sub-Assembly Staging (Batch #45),ASSEMBLY_1,ASSEMBLY_BAY,6,150,10,44.7,7.6,fixed,False,191,False

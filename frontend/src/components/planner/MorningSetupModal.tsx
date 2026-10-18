@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   X,
   FileSpreadsheet,
@@ -23,72 +23,180 @@ import {
   CheckCircle,
 } from 'lucide-react';
 import { usePlant } from '../../context/PlantContext';
-import { parseRules } from '../../services/managerApi';
+import { parseRules, listAvailableTemplates, loadAvailableTemplate } from '../../services/managerApi';
 import { CACHED_RULE_RESULT } from '../../services/geminiService';
-import { FIVE_DAY_DATASETS, DayDatasetPackage } from '../../constants/dailyDatasets';
 import { Worker } from '../../types';
 
 export const MorningSetupModal: React.FC = () => {
   const {
     morningSetupOpen,
     setMorningSetupOpen,
-    loadDemoPlant,
     solveMorningPlan,
     isSolvingBackend,
     backendConnected,
     setCurrentView,
-    workers,
     setWorkers,
-    activeDatasetDay,
-    setActiveDatasetDay,
   } = usePlant();
 
-  // Find initial day package
-  const initialPackage = FIVE_DAY_DATASETS.find((d) => d.id === activeDatasetDay) || FIVE_DAY_DATASETS[0];
-
   const [currentStep, setCurrentStep] = useState<number>(1);
-  const [selectedDayId, setSelectedDayId] = useState<string>(initialPackage.id);
-  const [selectedFileName, setSelectedFileName] = useState<string>(initialPackage.orders_file);
-  const [fileContent, setFileContent] = useState<string>(initialPackage.orders_csv_raw);
-  const [selectedWorkerFileName, setSelectedWorkerFileName] = useState<string>(initialPackage.workers_file);
-  const [activeWorkersList, setActiveWorkersList] = useState<Worker[]>(initialPackage.workers);
-  const [selectedDocName, setSelectedDocName] = useState<string>(initialPackage.tariff_file);
-  const [docUploaded, setDocUploaded] = useState<boolean>(true);
+  const [selectedDayId, setSelectedDayId] = useState<string>('');
+  const [selectedFileName, setSelectedFileName] = useState<string>('');
+  const [fileContent, setFileContent] = useState<string>('');
+  const [parsedOrdersPreview, setParsedOrdersPreview] = useState<Array<{ id: string; machine: string; duration: string; isCritical: boolean }>>([]);
+  const [selectedWorkerFileName, setSelectedWorkerFileName] = useState<string>('');
+  const [activeWorkersList, setActiveWorkersList] = useState<Worker[]>([]);
+  const [selectedDocName, setSelectedDocName] = useState<string>('');
+  const [docUploaded, setDocUploaded] = useState<boolean>(false);
+  const [dataSource, setDataSource] = useState<'none' | 'template' | 'upload'>('none');
+  const [templateDayId, setTemplateDayId] = useState('day1_monday');
+  const [templateOptions, setTemplateOptions] = useState<Array<{ day_id: string; label: string }>>([]);
+  const [templatesLoading, setTemplatesLoading] = useState(false);
+  const [templateError, setTemplateError] = useState('');
+  const [tariffFileName, setTariffFileName] = useState('');
+  const [solveError, setSolveError] = useState('');
+
+  const plantFilesReady = Boolean(selectedFileName && selectedWorkerFileName);
+
+  useEffect(() => {
+    if (!morningSetupOpen) return;
+    listAvailableTemplates()
+      .then((res) => setTemplateOptions(res.templates.filter((t) => t.available).map((t) => ({ day_id: t.day_id, label: t.label }))))
+      .catch(() => setTemplateOptions([]));
+  }, [morningSetupOpen]);
 
   // Natural Language Rules State
   const [naturalLanguageRule, setNaturalLanguageRule] = useState<string>(
-    'Keep every station within its ISO 7243 limit, maintain factory output at 98% or more, enforce a 2-hour frozen window on breakdowns, and reserve 2 heat buffers during peak solar hours.'
+    'Keep every station within its ISO 7243 Table A.1 limit, maintain factory output at 98% or more, enforce a 2-hour frozen window on breakdowns, and reserve 2 heat buffers during peak solar hours.'
   );
   const [isExtractingRules, setIsExtractingRules] = useState<boolean>(false);
-  const [extractedConstraints, setExtractedConstraints] = useState<any[]>(CACHED_RULE_RESULT.constraints);
-  const [geminiModelUsed, setGeminiModelUsed] = useState<string>('gemini-2.5-flash');
+  const [extractedConstraints, setExtractedConstraints] = useState<any[]>([]);
+  const [geminiModelUsed, setGeminiModelUsed] = useState<string>('Not called yet');
 
   // Horizon & Slot Resolution Configuration
   const [horizonHours, setHorizonHours] = useState<number>(48);
   const [slotDurationMinutes, setSlotDurationMinutes] = useState<number>(15);
 
-  if (!morningSetupOpen) return null;
-
-  // Handle selection of one of the 5 Pre-Packaged Days
-  const handleSelectDayPackage = (pkg: DayDatasetPackage) => {
-    setSelectedDayId(pkg.id);
-    setActiveDatasetDay(pkg.id);
-    setSelectedFileName(pkg.orders_file);
-    setFileContent(pkg.orders_csv_raw);
-    setSelectedWorkerFileName(pkg.workers_file);
-    setActiveWorkersList(pkg.workers);
-    setWorkers(pkg.workers);
-    setSelectedDocName(pkg.tariff_file);
+  const handleClearOrders = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setSelectedFileName('');
+    setFileContent('');
+    setParsedOrdersPreview([]);
   };
+
+  const handleClearWorkers = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setSelectedWorkerFileName('');
+    setActiveWorkersList([]);
+  };
+
+  const handleClearDoc = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setSelectedDocName('');
+    setDocUploaded(false);
+  };
+
+  const applyOrdersText = (fileName: string, text: string) => {
+    setSelectedFileName(fileName);
+    setFileContent(text);
+    try {
+      const lines = text.split('\n').filter((l) => l.trim().length > 0);
+      if (lines.length > 1) {
+        const header = lines[0].split(',').map((h) => h.trim().toLowerCase());
+        const idIdx = header.findIndex((h) => h.includes('order_id') || h === 'id');
+        const mIdx = header.findIndex((h) => h.includes('machine'));
+        const dIdx = header.findIndex((h) => h.includes('duration') || h.includes('mins'));
+        const critIdx = header.findIndex((h) => h.includes('critical') || h.includes('melt'));
+        const preview: Array<{ id: string; machine: string; duration: string; isCritical: boolean }> = [];
+        for (let i = 1; i < Math.min(lines.length, 6); i++) {
+          const cols = lines[i].split(',').map((c) => c.trim().replace(/^["']|["']$/g, ''));
+          preview.push({
+            id: idIdx >= 0 && cols[idIdx] ? cols[idIdx] : `ORD_${i}`,
+            machine: mIdx >= 0 && cols[mIdx] ? cols[mIdx] : 'CNC_1',
+            duration: dIdx >= 0 && cols[dIdx] ? `${cols[dIdx]} mins` : '180 mins',
+            isCritical: critIdx >= 0 ? cols[critIdx].toLowerCase() === 'true' : false,
+          });
+        }
+        setParsedOrdersPreview(preview);
+      }
+    } catch (err) {
+      console.warn('Error parsing order preview:', err);
+    }
+  };
+
+  const applyWorkerText = (fileName: string, text: string) => {
+    setSelectedWorkerFileName(fileName);
+    try {
+      const lines = text.split('\n').filter((l) => l.trim().length > 0);
+      if (lines.length > 1) {
+        const header = lines[0].split(',').map((h) => h.trim().toLowerCase());
+        const idIdx = header.findIndex((h) => h.includes('worker_id') || h === 'id');
+        const nameIdx = header.findIndex((h) => h.includes('bilingual') || h.includes('full_name') || h.includes('name'));
+        const phoneIdx = header.findIndex((h) => h.includes('phone'));
+        const stIdx = header.findIndex((h) => h.includes('station') || h.includes('assigned_station'));
+        const roleIdx = header.findIndex((h) => h.includes('role'));
+        const qualIdx = header.findIndex((h) => h.includes('furnace') || h.includes('qualified'));
+        const parsed: Worker[] = [];
+        for (let i = 1; i < lines.length; i++) {
+          const cols = lines[i].split(',').map((c) => c.trim().replace(/^["']|["']$/g, ''));
+          if (cols.length >= 3) {
+            parsed.push({
+              id: idIdx >= 0 && cols[idIdx] ? cols[idIdx].toLowerCase() : `w_up_${i}`,
+              name: nameIdx >= 0 && cols[nameIdx] ? cols[nameIdx] : `Worker ${i}`,
+              phone: phoneIdx >= 0 && cols[phoneIdx] ? cols[phoneIdx] : '',
+              stationId: stIdx >= 0 && cols[stIdx] ? cols[stIdx] : 'st_furnace_1',
+              role: roleIdx >= 0 && cols[roleIdx] ? cols[roleIdx] : 'Industrial Operator',
+              isFurnaceQualified: qualIdx >= 0 ? cols[qualIdx].toLowerCase() === 'true' : false,
+              status: 'working',
+              restTimeRemainingSec: 0,
+              hasConsented: true,
+              consentType: 'voice_enabled',
+              consentDate: '2026-10-18',
+            });
+          }
+        }
+        if (parsed.length > 0) {
+          setActiveWorkersList(parsed);
+          setWorkers(parsed);
+        }
+      }
+    } catch (err) {
+      console.warn('Error parsing worker CSV:', err);
+    }
+  };
+
+  const handleLoadTemplates = async () => {
+    setTemplatesLoading(true);
+    setTemplateError('');
+    try {
+      const pack = await loadAvailableTemplate(templateDayId);
+      applyOrdersText(pack.orders_filename, pack.orders_csv);
+      applyWorkerText(pack.roster_filename, pack.roster_csv);
+      setTariffFileName(pack.tariff_filename);
+      setSelectedDayId(pack.day_id);
+      setDataSource('template');
+      setSelectedDocName('');
+      setDocUploaded(false);
+    } catch {
+      setTemplateError('Templates could not be loaded from the backend. Upload the spreadsheets yourself, or start the API on port 8000.');
+    } finally {
+      setTemplatesLoading(false);
+    }
+  };
+
+  if (!morningSetupOpen) return null;
 
   // Handle manual upload of Orders CSV/Excel
   const handleOrdersFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setSelectedFileName(file.name);
       const reader = new FileReader();
       reader.onload = (event) => {
-        setFileContent((event.target?.result as string) || '');
+        applyOrdersText(file.name, (event.target?.result as string) || '');
+        setDataSource('upload');
+        setSelectedDayId('');
       };
       reader.readAsText(file);
     }
@@ -98,56 +206,10 @@ export const MorningSetupModal: React.FC = () => {
   const handleWorkerFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setSelectedWorkerFileName(file.name);
       const reader = new FileReader();
       reader.onload = (event) => {
-        const text = (event.target?.result as string) || '';
-        try {
-          const lines = text.split('\n').filter((l) => l.trim().length > 0);
-          if (lines.length > 1) {
-            const header = lines[0].split(',').map((h) => h.trim().toLowerCase());
-            const idIdx = header.findIndex((h) => h.includes('worker_id') || h.includes('id'));
-            const nameIdx = header.findIndex((h) => h.includes('name') || h.includes('bilingual'));
-            const phoneIdx = header.findIndex((h) => h.includes('phone'));
-            const stIdx = header.findIndex((h) => h.includes('station') || h.includes('assigned_station'));
-            const roleIdx = header.findIndex((h) => h.includes('role'));
-            const qualIdx = header.findIndex((h) => h.includes('furnace') || h.includes('qualified'));
-
-            const parsed: Worker[] = [];
-            for (let i = 1; i < lines.length; i++) {
-              const cols = lines[i].split(',').map((c) => c.trim().replace(/^["']|["']$/g, ''));
-              if (cols.length >= 3) {
-                const wId = idIdx >= 0 && cols[idIdx] ? cols[idIdx].toLowerCase() : `w_up_${i}`;
-                const wName = nameIdx >= 0 && cols[nameIdx] ? cols[nameIdx] : `Worker ${i}`;
-                const wPhone = phoneIdx >= 0 && cols[phoneIdx] ? cols[phoneIdx] : `+91 98480 ${10000 + i}`;
-                const wSt = stIdx >= 0 && cols[stIdx] ? cols[stIdx] : 'st_furnace_1';
-                const wRole = roleIdx >= 0 && cols[roleIdx] ? cols[roleIdx] : 'Industrial Operator';
-                const isQual = qualIdx >= 0 ? cols[qualIdx].toLowerCase() === 'true' : i % 5 === 0;
-
-                parsed.push({
-                  id: wId,
-                  name: wName,
-                  phone: wPhone,
-                  stationId: wSt,
-                  role: wRole,
-                  isFurnaceQualified: isQual,
-                  status: 'working',
-                  restTimeRemainingSec: 0,
-                  hasConsented: true,
-                  consentType: 'voice_enabled',
-                  consentDate: '2026-10-18',
-                });
-              }
-            }
-
-            if (parsed.length > 0) {
-              setActiveWorkersList(parsed);
-              setWorkers(parsed);
-            }
-          }
-        } catch (err) {
-          console.warn('Error parsing uploaded worker CSV, keeping existing list:', err);
-        }
+        applyWorkerText(file.name, (event.target?.result as string) || '');
+        setDataSource('upload');
       };
       reader.readAsText(file);
     }
@@ -177,7 +239,9 @@ export const MorningSetupModal: React.FC = () => {
             frozenWindowHours: c.frozen_window_hours || 2,
           }))
         );
-        if (res.gemini_model) setGeminiModelUsed(res.gemini_model);
+        const label = (res as { label?: string; source?: string; gemini_model?: string }).label
+          || ((res as { source?: string }).source === 'gemini' ? res.gemini_model : 'Deterministic fallback, no Gemini call');
+        if (label) setGeminiModelUsed(label);
       }
     } catch {
       // Keep cached / default
@@ -188,14 +252,18 @@ export const MorningSetupModal: React.FC = () => {
 
   const handleMakePlan = async () => {
     try {
-      await solveMorningPlan(fileContent || undefined, horizonHours, slotDurationMinutes, activeWorkersList);
+      await solveMorningPlan(
+        fileContent || undefined,
+        horizonHours,
+        slotDurationMinutes,
+        activeWorkersList.length > 0 ? activeWorkersList : undefined,
+        selectedDayId || undefined
+      );
+      setSolveError('');
       setCurrentView('planner');
-    } catch {
-      setWorkers(activeWorkersList);
-      loadDemoPlant();
-      setCurrentView('planner');
-    } finally {
       setMorningSetupOpen(false);
+    } catch {
+      setSolveError('The solver did not return a plan. The previous plan was kept. Check the backend, then try again.');
     }
   };
 
@@ -234,8 +302,10 @@ export const MorningSetupModal: React.FC = () => {
             <span>1. Upload Orders & Workers</span>
           </button>
           <button
-            onClick={() => setCurrentStep(2)}
-            className={`py-3 px-4 flex items-center justify-center gap-2 border-b-2 transition-colors ${
+            type="button"
+            disabled={!plantFilesReady}
+            onClick={() => plantFilesReady && setCurrentStep(2)}
+            className={`py-3 px-4 flex items-center justify-center gap-2 border-b-2 transition-colors disabled:opacity-40 ${
               currentStep === 2
                 ? 'border-[#0F5FA8] text-[#0F5FA8] bg-blue-50/50'
                 : 'border-transparent hover:bg-slate-50'
@@ -244,8 +314,10 @@ export const MorningSetupModal: React.FC = () => {
             <span>2. Gemini Rules</span>
           </button>
           <button
-            onClick={() => setCurrentStep(3)}
-            className={`py-3 px-4 flex items-center justify-center gap-2 border-b-2 transition-colors ${
+            type="button"
+            disabled={!plantFilesReady}
+            onClick={() => plantFilesReady && setCurrentStep(3)}
+            className={`py-3 px-4 flex items-center justify-center gap-2 border-b-2 transition-colors disabled:opacity-40 ${
               currentStep === 3
                 ? 'border-[#0F5FA8] text-[#0F5FA8] bg-blue-50/50'
                 : 'border-transparent hover:bg-slate-50'
@@ -254,8 +326,10 @@ export const MorningSetupModal: React.FC = () => {
             <span>3. Slots & Weather</span>
           </button>
           <button
-            onClick={() => setCurrentStep(4)}
-            className={`py-3 px-4 flex items-center justify-center gap-2 border-b-2 transition-colors ${
+            type="button"
+            disabled={!plantFilesReady}
+            onClick={() => plantFilesReady && setCurrentStep(4)}
+            className={`py-3 px-4 flex items-center justify-center gap-2 border-b-2 transition-colors disabled:opacity-40 ${
               currentStep === 4
                 ? 'border-[#0F5FA8] text-[#0F5FA8] bg-blue-50/50'
                 : 'border-transparent hover:bg-slate-50'
@@ -270,213 +344,285 @@ export const MorningSetupModal: React.FC = () => {
           {/* Step 1: Upload Orders, Workers, and Grounding Documents */}
           {currentStep === 1 && (
             <div className="space-y-5 text-xs">
-              {/* 5-Day Dataset Quick Switcher */}
-              <div className="bg-slate-50 border border-[#D9DDE2] rounded-xl p-3.5 space-y-2">
-                <div className="flex items-center justify-between">
+              <div className="border border-[#0F5FA8] bg-blue-50/70 rounded-lg p-4 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-bold text-[#0F5FA8] uppercase tracking-wider text-xs">Load available templates</p>
+                    <p className="text-[11px] text-[#1B1F24] mt-1 leading-relaxed">
+                      Nothing is attached until you choose. Load a shipped day package (orders, worker roster, tariff spreadsheet), or upload those spreadsheets yourself. Reference PDFs are not included and stay a manual upload.
+                    </p>
+                  </div>
+                  {dataSource === 'template' && (
+                    <span className="shrink-0 text-[10px] font-bold bg-emerald-100 text-[#1E7A46] px-2 py-1 rounded">Templates loaded</span>
+                  )}
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <select
+                    value={templateDayId}
+                    onChange={(e) => setTemplateDayId(e.target.value)}
+                    className="px-2 py-1.5 rounded-md border border-[#D9DDE2] bg-white text-xs"
+                    aria-label="Template day"
+                  >
+                    {(templateOptions.length > 0 ? templateOptions : [
+                      { day_id: 'day1_monday', label: 'Day 1 — Monday' },
+                      { day_id: 'day2_tuesday', label: 'Day 2 — Tuesday' },
+                      { day_id: 'day3_wednesday', label: 'Day 3 — Wednesday' },
+                      { day_id: 'day4_thursday', label: 'Day 4 — Thursday' },
+                      { day_id: 'day5_friday', label: 'Day 5 — Friday' },
+                    ]).map((opt) => (
+                      <option key={opt.day_id} value={opt.day_id}>{opt.label}</option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={handleLoadTemplates}
+                    disabled={templatesLoading}
+                    className="px-3 py-1.5 rounded-md bg-[#0F5FA8] hover:bg-[#0c4e8a] disabled:bg-slate-300 text-white font-semibold text-xs"
+                  >
+                    {templatesLoading ? 'Loading templates…' : 'Load available templates'}
+                  </button>
+                  {tariffFileName && (
+                    <span className="text-[11px] text-[#1E7A46] font-semibold">Tariff sheet: {tariffFileName}</span>
+                  )}
+                </div>
+                {templateError && <p className="text-[11px] text-red-700">{templateError}</p>}
+              </div>
+
+              {/* Primary User File Upload Cards */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
                   <span className="font-bold text-xs uppercase tracking-wider text-[#1B1F24] flex items-center gap-1.5">
-                    <Calendar size={14} className="text-[#0F5FA8]" />
-                    <span>Select Real-World Day Scenario (from sample_manager_uploads)</span>
+                    <UploadCloud size={16} className="text-[#0F5FA8]" />
+                    <span>Upload Custom Plant Files (Bring Your Own Files)</span>
                   </span>
-                  <span className="text-[11px] text-[#5B636E]">5 distinct daily packages with orders, 250+ workers & tariffs</span>
+                  <span className="text-[11px] text-[#5B636E]">Upload your operational spreadsheets and standards</span>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
-                  {FIVE_DAY_DATASETS.map((pkg) => {
-                    const isSelected = selectedDayId === pkg.id;
-                    return (
-                      <button
-                        key={pkg.id}
-                        type="button"
-                        onClick={() => handleSelectDayPackage(pkg)}
-                        className={`text-left p-2.5 rounded-lg border transition-all ${
-                          isSelected
-                            ? 'bg-blue-50 border-[#0F5FA8] shadow-xs ring-1 ring-[#0F5FA8]'
-                            : 'bg-white border-[#D9DDE2] hover:border-slate-400'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className={`font-bold text-[11px] ${isSelected ? 'text-[#0F5FA8]' : 'text-[#1B1F24]'}`}>
-                            {pkg.id.replace('_', ' ').toUpperCase()}
-                          </span>
-                          {isSelected && <CheckCircle size={12} className="text-[#0F5FA8]" />}
-                        </div>
-                        <p className="text-[10px] text-[#5B636E] font-medium truncate">{pkg.theme}</p>
-                        <div className="mt-1 flex items-center gap-1 text-[10px] font-semibold text-[#1E7A46]">
-                          <span>{pkg.worker_count} Workers</span> • <span>{pkg.orders_count} Orders</span>
-                        </div>
-                      </button>
-                    );
-                  })}
+                {/* 3 Clean Upload Cards: Orders, Workers Roster, and Tariff */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* 1. Orders File */}
+                  <div className="border border-[#D9DDE2] rounded-lg p-3.5 bg-white space-y-2.5 shadow-2xs relative">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-xs uppercase tracking-wider text-[#1B1F24] flex items-center gap-1.5">
+                        <FileSpreadsheet size={15} className="text-[#0F5FA8]" />
+                        <span>1. Plant Orders</span>
+                      </span>
+                      {selectedFileName ? (
+                        <button
+                          type="button"
+                          onClick={handleClearOrders}
+                          className="text-[10px] bg-red-100 hover:bg-red-200 text-red-700 font-bold px-1.5 py-0.5 rounded cursor-pointer inline-flex items-center gap-1"
+                          title="Remove uploaded orders file"
+                        >
+                          <X size={10} /> Clear
+                        </button>
+                      ) : (
+                        <span className="text-[10px] bg-blue-100 text-[#0F5FA8] font-bold px-1.5 py-0.5 rounded">
+                          CSV / Excel
+                        </span>
+                      )}
+                    </div>
+
+                    <label className={`block border-2 border-dashed rounded-lg p-3.5 text-center transition-colors cursor-pointer ${
+                      selectedFileName ? 'border-[#0F5FA8] bg-blue-50/40' : 'border-[#D9DDE2] hover:border-[#0F5FA8] bg-slate-50/50'
+                    }`}>
+                      <input type="file" accept=".csv,.xlsx,.xls" onChange={handleOrdersFileUpload} className="hidden" />
+                      <UploadCloud size={22} className="mx-auto text-[#0F5FA8] mb-1.5" />
+                      <p className="font-semibold text-[#1B1F24] text-xs truncate">
+                        {selectedFileName || 'Browse or Drag Custom Orders CSV'}
+                      </p>
+                      <p className="text-[10px] text-[#5B636E] mt-0.5">
+                        {fileContent ? `✓ ${fileContent.split('\n').filter(Boolean).length - 1} orders loaded` : 'No file selected (Drop your orders here)'}
+                      </p>
+                    </label>
+                    <p className="text-[10px] text-[#5B636E]">Includes routing sequences, kWh, and due dates across all machines.</p>
+                  </div>
+
+                  {/* 2. Worker Roster File */}
+                  <div className="border border-emerald-300 rounded-lg p-3.5 bg-emerald-50/20 space-y-2.5 shadow-2xs relative">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-xs uppercase tracking-wider text-[#1E7A46] flex items-center gap-1.5">
+                        <Users size={15} className="text-[#1E7A46]" />
+                        <span>2. Worker Roster</span>
+                      </span>
+                      {selectedWorkerFileName ? (
+                        <button
+                          type="button"
+                          onClick={handleClearWorkers}
+                          className="text-[10px] bg-red-100 hover:bg-red-200 text-red-700 font-bold px-1.5 py-0.5 rounded cursor-pointer inline-flex items-center gap-1"
+                          title="Remove uploaded worker roster"
+                        >
+                          <X size={10} /> Clear
+                        </button>
+                      ) : (
+                        <span className="text-[10px] bg-emerald-100 text-[#1E7A46] font-bold px-1.5 py-0.5 rounded">
+                          CSV / Excel
+                        </span>
+                      )}
+                    </div>
+
+                    <label className={`block border-2 border-dashed rounded-lg p-3.5 text-center transition-colors cursor-pointer ${
+                      selectedWorkerFileName ? 'border-emerald-500 bg-emerald-50/60' : 'border-emerald-300 hover:border-emerald-600 bg-white'
+                    }`}>
+                      <input type="file" accept=".csv,.xlsx,.xls" onChange={handleWorkerFileUpload} className="hidden" />
+                      <Users size={22} className="mx-auto text-[#1E7A46] mb-1.5" />
+                      <p className="font-semibold text-[#1B1F24] text-xs truncate">
+                        {selectedWorkerFileName || 'Browse or Drag Custom Worker Roster'}
+                      </p>
+                      <p className="text-[10px] text-[#1E7A46] font-bold mt-0.5">
+                        {activeWorkersList.length > 0 ? `✓ ${activeWorkersList.length} workers loaded` : 'No file selected'}
+                      </p>
+                    </label>
+                    <p className="text-[10px] text-[#5B636E]">
+                      Uploaded directly from portal. Zero PII stored. Includes relief certifications.
+                    </p>
+                  </div>
+
+                  {/* 3. Tariff & Grounding Document */}
+                  <div className="border border-[#D9DDE2] rounded-lg p-3.5 bg-white space-y-2.5 shadow-2xs relative">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-xs uppercase tracking-wider text-[#1B1F24] flex items-center gap-1.5">
+                        <Zap size={15} className="text-[#C2410C]" />
+                        <span>3. Electricity Tariff / SOP</span>
+                      </span>
+                      {selectedDocName ? (
+                        <button
+                          type="button"
+                          onClick={handleClearDoc}
+                          className="text-[10px] bg-red-100 hover:bg-red-200 text-red-700 font-bold px-1.5 py-0.5 rounded cursor-pointer inline-flex items-center gap-1"
+                          title="Remove attached document"
+                        >
+                          <X size={10} /> Clear
+                        </button>
+                      ) : (
+                        <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded">
+                          PDF / CSV
+                        </span>
+                      )}
+                    </div>
+
+                    <label className={`block border-2 border-dashed rounded-lg p-3.5 text-center transition-colors cursor-pointer ${
+                      selectedDocName ? 'border-[#C2410C] bg-amber-50/40' : 'border-[#D9DDE2] hover:border-[#C2410C] bg-slate-50/50'
+                    }`}>
+                      <input type="file" accept=".pdf,.doc,.docx,.txt,.csv,.xlsx" onChange={handleDocUpload} className="hidden" />
+                      <FileUp size={22} className="mx-auto text-[#C2410C] mb-1.5" />
+                      <p className="font-semibold text-[#1B1F24] text-xs truncate">
+                        {selectedDocName || 'Browse or Drag Tariff / SOP Document'}
+                      </p>
+                      <p className="text-[10px] text-[#5B636E] mt-0.5">
+                        {docUploaded ? '✓ PDF or SOP attached' : 'Optional. PDFs are never loaded by templates.'}
+                      </p>
+                    </label>
+                    <p className="text-[10px] text-[#5B636E]">10:00–16:00 solar hours concession (₹6.00/kWh) & peak surcharge.</p>
+                  </div>
                 </div>
               </div>
 
-              {/* 3 Upload Cards: Orders, Workers Roster, and Tariff */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* 1. Orders File */}
-                <div className="border border-[#D9DDE2] rounded-lg p-3.5 bg-white space-y-2.5 shadow-2xs">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-xs uppercase tracking-wider text-[#1B1F24] flex items-center gap-1.5">
-                      <FileSpreadsheet size={15} className="text-[#0F5FA8]" />
-                      <span>1. Plant Orders</span>
-                    </span>
-                    <span className="text-[10px] bg-blue-100 text-[#0F5FA8] font-bold px-1.5 py-0.5 rounded">
-                      CSV / Excel
-                    </span>
-                  </div>
-
-                  <label className="block border-2 border-dashed border-[#D9DDE2] rounded-lg p-3 text-center hover:border-[#0F5FA8] bg-slate-50/50 transition-colors cursor-pointer">
-                    <input type="file" accept=".csv,.xlsx,.xls" onChange={handleOrdersFileUpload} className="hidden" />
-                    <UploadCloud size={20} className="mx-auto text-[#0F5FA8] mb-1" />
-                    <p className="font-semibold text-[#1B1F24] text-[11px] truncate">{selectedFileName}</p>
-                    <p className="text-[10px] text-[#5B636E]">
-                      {fileContent ? `${fileContent.split('\n').filter(Boolean).length} rows loaded` : 'Choose orders spreadsheet'}
-                    </p>
-                  </label>
-                  <p className="text-[10px] text-[#5B636E]">Includes routing sequences, kWh, and due dates across all 16 machines.</p>
-                </div>
-
-                {/* 2. Worker Roster File (PORTAL UPLOAD - NO BIGQUERY DEPENDENCY) */}
-                <div className="border border-emerald-300 rounded-lg p-3.5 bg-emerald-50/30 space-y-2.5 shadow-2xs">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-xs uppercase tracking-wider text-[#1E7A46] flex items-center gap-1.5">
-                      <Users size={15} className="text-[#1E7A46]" />
-                      <span>2. Worker Details</span>
-                    </span>
-                    <span className="text-[10px] bg-emerald-100 text-[#1E7A46] font-bold px-1.5 py-0.5 rounded">
-                      Portal Upload
-                    </span>
-                  </div>
-
-                  <label className="block border-2 border-dashed border-emerald-300 rounded-lg p-3 text-center hover:border-emerald-600 bg-white transition-colors cursor-pointer">
-                    <input type="file" accept=".csv,.xlsx,.xls" onChange={handleWorkerFileUpload} className="hidden" />
-                    <Users size={20} className="mx-auto text-[#1E7A46] mb-1" />
-                    <p className="font-semibold text-[#1B1F24] text-[11px] truncate">{selectedWorkerFileName}</p>
-                    <p className="text-[10px] text-[#1E7A46] font-bold">
-                      ✓ {activeWorkersList.length} Workers Active in Portal
-                    </p>
-                  </label>
-                  <p className="text-[10px] text-[#5B636E]">
-                    Uploaded directly from portal. Zero PII stored. Includes bilingual Telugu names and relief certifications.
-                  </p>
-                </div>
-
-                {/* 3. Tariff & Grounding Document */}
-                <div className="border border-[#D9DDE2] rounded-lg p-3.5 bg-white space-y-2.5 shadow-2xs">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-xs uppercase tracking-wider text-[#1B1F24] flex items-center gap-1.5">
-                      <Zap size={15} className="text-[#C2410C]" />
-                      <span>3. Electricity Tariff</span>
-                    </span>
-                    <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded">
-                      TGSPDCL HT-1
-                    </span>
-                  </div>
-
-                  <label className="block border-2 border-dashed border-[#D9DDE2] rounded-lg p-3 text-center hover:border-[#C2410C] bg-slate-50/50 transition-colors cursor-pointer">
-                    <input type="file" accept=".pdf,.doc,.docx,.txt,.csv,.xlsx" onChange={handleDocUpload} className="hidden" />
-                    <FileUp size={20} className="mx-auto text-[#C2410C] mb-1" />
-                    <p className="font-semibold text-[#1B1F24] text-[11px] truncate">{selectedDocName}</p>
-                    <p className="text-[10px] text-[#5B636E]">
-                      {docUploaded ? 'Grounding rules & solar concessions attached' : 'Upload tariff order'}
-                    </p>
-                  </label>
-                  <p className="text-[10px] text-[#5B636E]">10:00–16:00 solar hours concession (₹4.40/kWh) & peak surcharge.</p>
-                </div>
-              </div>
-
-              {/* Real-time Preview: Workers Ingestion & Orders Ingestion */}
+              {/* Real-time Preview: Workers Ingestion & Orders Ingestion (Shows User Uploaded Data Only) */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Worker Roster Preview */}
                 <div>
                   <h4 className="font-bold text-xs uppercase tracking-wider text-[#5B636E] mb-2 flex items-center justify-between">
-                    <span>Active Worker Roster ({activeWorkersList.length} Headcount)</span>
-                    <span className="text-[10px] text-[#1E7A46] font-bold">100% Acclimatised</span>
+                    <span>Active Worker Roster ({activeWorkersList.length} Uploaded)</span>
+                    {activeWorkersList.length > 0 && <span className="text-[10px] text-[#1E7A46] font-bold">100% Acclimatised</span>}
                   </h4>
-                  <div className="overflow-x-auto border border-[#D9DDE2] rounded-lg max-h-40">
-                    <table className="w-full text-[11px] text-left">
-                      <thead className="bg-[#F4F5F7] text-[#5B636E] border-b border-[#D9DDE2] sticky top-0">
-                        <tr>
-                          <th className="p-1.5">Worker Name</th>
-                          <th className="p-1.5">Station</th>
-                          <th className="p-1.5">Role</th>
-                          <th className="p-1.5">Furnace Certified</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[#D9DDE2]">
-                        {activeWorkersList.slice(0, 5).map((w) => (
-                          <tr key={w.id} className="hover:bg-slate-50">
-                            <td className="p-1.5 font-semibold text-[#1B1F24]">{w.name}</td>
-                            <td className="p-1.5 font-mono text-[10px] text-[#0F5FA8]">{w.stationId}</td>
-                            <td className="p-1.5 text-[#5B636E] truncate max-w-[120px]">{w.role}</td>
-                            <td className="p-1.5">
-                              {w.isFurnaceQualified ? (
-                                <span className="bg-emerald-100 text-[#1E7A46] px-1.5 py-0.5 rounded text-[10px] font-bold">
-                                  ✓ Relief
-                                </span>
-                              ) : (
-                                <span className="text-[#5B636E] text-[10px]">Standard</span>
-                              )}
-                            </td>
+                  {activeWorkersList.length > 0 ? (
+                    <div className="overflow-x-auto border border-[#D9DDE2] rounded-lg max-h-40">
+                      <table className="w-full text-[11px] text-left">
+                        <thead className="bg-[#F4F5F7] text-[#5B636E] border-b border-[#D9DDE2] sticky top-0">
+                          <tr>
+                            <th className="p-1.5">Worker Name</th>
+                            <th className="p-1.5">Station</th>
+                            <th className="p-1.5">Role</th>
+                            <th className="p-1.5">Furnace Certified</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                        </thead>
+                        <tbody className="divide-y divide-[#D9DDE2]">
+                          {activeWorkersList.slice(0, 5).map((w) => (
+                            <tr key={w.id} className="hover:bg-slate-50">
+                              <td className="p-1.5 font-semibold text-[#1B1F24]">{w.name}</td>
+                              <td className="p-1.5 font-mono text-[10px] text-[#0F5FA8]">{w.stationId}</td>
+                              <td className="p-1.5 text-[#5B636E] truncate max-w-[120px]">{w.role}</td>
+                              <td className="p-1.5">
+                                {w.isFurnaceQualified ? (
+                                  <span className="bg-emerald-100 text-[#1E7A46] px-1.5 py-0.5 rounded text-[10px] font-bold">
+                                    ✓ Relief
+                                  </span>
+                                ) : (
+                                  <span className="text-[#5B636E] text-[10px]">Standard</span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="p-5 text-center text-[#5B636E] border border-dashed border-[#D9DDE2] rounded-lg bg-slate-50/60 flex flex-col items-center justify-center min-h-[110px]">
+                      <Users size={22} className="text-slate-400 mb-1" />
+                      <p className="font-semibold text-xs text-[#1B1F24]">No Worker Roster Uploaded</p>
+                      <p className="text-[10px] text-[#5B636E] mt-0.5">Load a template, or upload a roster spreadsheet. A default roster is not used.</p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Orders Ingestion Preview */}
                 <div>
                   <h4 className="font-bold text-xs uppercase tracking-wider text-[#5B636E] mb-2 flex items-center justify-between">
-                    <span>Orders Ingestion Preview</span>
-                    <span className="text-[10px] text-[#0F5FA8] font-bold">48h Horizon Coverage</span>
+                    <span>Orders Ingestion Preview ({parsedOrdersPreview.length} Parsed)</span>
+                    {parsedOrdersPreview.length > 0 && <span className="text-[10px] text-[#0F5FA8] font-bold">Ready to Dispatch</span>}
                   </h4>
-                  <div className="overflow-x-auto border border-[#D9DDE2] rounded-lg max-h-40">
-                    <table className="w-full text-[11px] text-left">
-                      <thead className="bg-[#F4F5F7] text-[#5B636E] border-b border-[#D9DDE2] sticky top-0">
-                        <tr>
-                          <th className="p-1.5">Order ID</th>
-                          <th className="p-1.5">Machine</th>
-                          <th className="p-1.5">Duration</th>
-                          <th className="p-1.5">Critical Melt</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[#D9DDE2]">
-                        <tr>
-                          <td className="p-1.5 font-mono font-bold text-[#0F5FA8]">ORD_AERO_01</td>
-                          <td className="p-1.5">FURNACE_1</td>
-                          <td className="p-1.5">180 min (12 slots)</td>
-                          <td className="p-1.5 text-red-600 font-bold">YES</td>
-                        </tr>
-                        <tr>
-                          <td className="p-1.5 font-mono font-bold text-[#0F5FA8]">ORD_AERO_02</td>
-                          <td className="p-1.5">FURNACE_2</td>
-                          <td className="p-1.5">150 min (10 slots)</td>
-                          <td className="p-1.5 text-red-600 font-bold">YES</td>
-                        </tr>
-                        <tr>
-                          <td className="p-1.5 font-mono font-bold text-[#0F5FA8]">ORD_AERO_03</td>
-                          <td className="p-1.5">CNC_1</td>
-                          <td className="p-1.5">180 min (12 slots)</td>
-                          <td className="p-1.5 text-slate-500">NO</td>
-                        </tr>
-                        <tr>
-                          <td className="p-1.5 font-mono font-bold text-[#0F5FA8]">ORD_AERO_04</td>
-                          <td className="p-1.5">CNC_2</td>
-                          <td className="p-1.5">240 min (16 slots)</td>
-                          <td className="p-1.5 text-slate-500">NO</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
+                  {parsedOrdersPreview.length > 0 ? (
+                    <div className="overflow-x-auto border border-[#D9DDE2] rounded-lg max-h-40">
+                      <table className="w-full text-[11px] text-left">
+                        <thead className="bg-[#F4F5F7] text-[#5B636E] border-b border-[#D9DDE2] sticky top-0">
+                          <tr>
+                            <th className="p-1.5">Order ID</th>
+                            <th className="p-1.5">Machine</th>
+                            <th className="p-1.5">Duration</th>
+                            <th className="p-1.5">Critical Melt</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#D9DDE2]">
+                          {parsedOrdersPreview.map((ord, idx) => (
+                            <tr key={idx} className="hover:bg-slate-50">
+                              <td className="p-1.5 font-mono font-bold text-[#0F5FA8]">{ord.id}</td>
+                              <td className="p-1.5 font-semibold text-[#1B1F24]">{ord.machine}</td>
+                              <td className="p-1.5">{ord.duration}</td>
+                              <td className="p-1.5">
+                                {ord.isCritical ? (
+                                  <span className="text-red-600 font-bold">YES</span>
+                                ) : (
+                                  <span className="text-slate-400">NO</span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="p-5 text-center text-[#5B636E] border border-dashed border-[#D9DDE2] rounded-lg bg-slate-50/60 flex flex-col items-center justify-center min-h-[110px]">
+                      <FileSpreadsheet size={22} className="text-slate-400 mb-1" />
+                      <p className="font-semibold text-xs text-[#1B1F24]">No Orders Uploaded</p>
+                      <p className="text-[10px] text-[#5B636E] mt-0.5">Load a template, or upload an orders spreadsheet.</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* Step 1 Actions */}
-              <div className="flex items-center justify-end pt-2">
+              <div className="flex items-center justify-between pt-2 gap-3">
+                <p className="text-[11px] text-[#5B636E]">
+                  {plantFilesReady
+                    ? (dataSource === 'template' ? 'Shipped templates are loaded. You can continue.' : 'Your uploads are loaded. You can continue.')
+                    : 'Continue stays off until orders and the worker roster are loaded.'}
+                </p>
                 <button
                   type="button"
+                  disabled={!plantFilesReady}
                   onClick={() => setCurrentStep(2)}
-                  className="px-5 py-2 rounded-lg bg-[#0F5FA8] hover:bg-[#0c4e8a] text-white font-semibold text-xs inline-flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm"
+                  className="px-5 py-2 rounded-lg bg-[#0F5FA8] hover:bg-[#0c4e8a] disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-semibold text-xs inline-flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm"
                 >
                   <span>Next: Configure Plain-Language Rules</span>
                   <ArrowRight size={14} />
@@ -689,10 +835,6 @@ export const MorningSetupModal: React.FC = () => {
 
               <div className="bg-slate-50 border border-[#D9DDE2] rounded-xl p-4 max-w-lg mx-auto text-left space-y-2 text-xs">
                 <div className="flex justify-between py-1 border-b border-[#D9DDE2]/60">
-                  <span className="text-[#5B636E]">Active Dataset Day:</span>
-                  <span className="font-bold text-[#0F5FA8] uppercase">{selectedDayId.replace('_', ' ')}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-[#D9DDE2]/60">
                   <span className="text-[#5B636E]">Planning Horizon:</span>
                   <span className="font-bold text-[#1B1F24]">{horizonHours} Hours</span>
                 </div>
@@ -702,15 +844,21 @@ export const MorningSetupModal: React.FC = () => {
                 </div>
                 <div className="flex justify-between py-1 border-b border-[#D9DDE2]/60">
                   <span className="text-[#5B636E]">Orders File:</span>
-                  <span className="font-mono text-[#0F5FA8]">{selectedFileName}</span>
+                  <span className="font-mono text-[#0F5FA8]">
+                    {selectedFileName ? `✓ ${selectedFileName} (${fileContent.split('\n').filter(Boolean).length - 1} orders)` : 'None — upload or load a template'}
+                  </span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-[#D9DDE2]/60">
-                  <span className="text-[#5B636E]">Worker Details (Portal Upload):</span>
-                  <span className="font-bold text-[#1E7A46]">✓ {activeWorkersList.length} Workers Active ({selectedWorkerFileName})</span>
+                  <span className="text-[#5B636E]">Worker Details:</span>
+                  <span className="font-bold text-[#1E7A46]">
+                    {activeWorkersList.length > 0 ? `✓ ${activeWorkersList.length} workers (${selectedWorkerFileName})` : 'None — upload or load a template'}
+                  </span>
                 </div>
                 <div className="flex justify-between py-1">
-                  <span className="text-[#5B636E]">Grounding Doc:</span>
-                  <span className="font-mono text-amber-800">{selectedDocName}</span>
+                  <span className="text-[#5B636E]">Grounding Tariff Document:</span>
+                  <span className="font-mono text-amber-800">
+                    {selectedDocName ? `✓ ${selectedDocName}` : tariffFileName ? `Tariff sheet ${tariffFileName} (illustrative). PDF not attached.` : 'No PDF attached. Tariff stays the illustrative table.'}
+                  </span>
                 </div>
               </div>
 
@@ -722,10 +870,11 @@ export const MorningSetupModal: React.FC = () => {
                 >
                   Back
                 </button>
+                {solveError && <p className="text-[11px] text-red-700 text-center">{solveError}</p>}
                 <button
                   type="button"
                   onClick={handleMakePlan}
-                  disabled={isSolvingBackend}
+                  disabled={isSolvingBackend || !plantFilesReady}
                   className="px-6 py-2.5 rounded-lg bg-[#0F5FA8] hover:bg-[#0c4e8a] disabled:bg-blue-300 text-white font-bold text-xs inline-flex items-center gap-2 transition-colors cursor-pointer shadow-md"
                 >
                   <Cpu size={16} />

@@ -54,7 +54,15 @@ app = FastAPI(
 # Cross-Origin Resource Sharing (CORS) for Manager UI, Supervisor Console, and Worker PWA
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "https://thermaplan-ai.web.app",
+        "https://thermaplan-ai.firebaseapp.com",
+    ],
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?|https://thermaplan-ai\.(web\.app|firebaseapp\.com)",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

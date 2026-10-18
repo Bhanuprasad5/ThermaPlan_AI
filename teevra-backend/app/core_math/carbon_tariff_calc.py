@@ -6,8 +6,8 @@ Time-shifting alone without kWh reduction produces exactly 0.0 tCO2 savings.
 
 from typing import Any
 
-# CEA Grid Emission Factor v20.0 (Dec 2024): 0.716 tCO2 / MWh = 0.000716 tCO2 / kWh
-CEA_GRID_EMISSION_FACTOR_TCO2_PER_KWH = 0.000716
+# CEA Grid Emission Factor v22.0 (Dec 2025 weighted avg): 0.675 tCO2 / MWh = 0.000675 tCO2 / kWh
+CEA_GRID_EMISSION_FACTOR_TCO2_PER_KWH = 0.000675
 
 # Base HT-I Industrial Rate in Telangana (TGSPDCL)
 BASE_TARIFF_INR_PER_KWH = 7.50
@@ -29,7 +29,7 @@ def get_tgspdcl_tod_rate(hour_of_day: int) -> dict[str, Any]:
             "rate_inr": 6.00,
             "multiplier": 0.80,
             "category": "SOLAR_DISCOUNT",
-            "clause": "TGSPDCL Tariff Order Clause 4.2b (-20% solar incentive)",
+            "clause": "Illustrative tariff, simulated (-20% solar window)",
             "is_solar": True,
             "is_peak": False,
         }
@@ -38,7 +38,7 @@ def get_tgspdcl_tod_rate(hour_of_day: int) -> dict[str, Any]:
             "rate_inr": 9.00,
             "multiplier": 1.20,
             "category": "EVENING_PEAK",
-            "clause": "TGSPDCL Tariff Order Clause 4.2c (+20% peak penalty)",
+            "clause": "Illustrative tariff, simulated (+20% evening peak)",
             "is_solar": False,
             "is_peak": True,
         }
@@ -47,7 +47,7 @@ def get_tgspdcl_tod_rate(hour_of_day: int) -> dict[str, Any]:
             "rate_inr": 7.50,
             "multiplier": 1.00,
             "category": "NORMAL_HOURS",
-            "clause": "TGSPDCL Tariff Order Clause 4.2a (Base HT-I rate)",
+            "clause": "Illustrative tariff, simulated (base HT-I rate)",
             "is_solar": False,
             "is_peak": False,
         }
@@ -120,7 +120,7 @@ def compute_honest_carbon_and_savings(
         )
     else:
         co2_saved = round(delta_kwh * CEA_GRID_EMISSION_FACTOR_TCO2_PER_KWH, 4)
-        honest_banner = f"Real energy reduction: {delta_kwh:.1f} kWh avoided ({co2_saved:.3f} tCO2 saved via CEA v20 grid factor)."
+        honest_banner = f"Real energy reduction: {delta_kwh:.1f} kWh avoided ({co2_saved:.3f} tCO2 saved via CEA v22 grid factor)."
 
     return {
         "baseline_kwh": round(baseline_kwh, 2),

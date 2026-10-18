@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { usePlant } from '../../context/PlantContext';
 import { ScheduledJob, Station, HeatLevel } from '../../types';
+import { maskPhone } from '../../utils/mapper';
 
 export const PlanCanvas: React.FC = () => {
   const {
@@ -211,7 +212,7 @@ export const PlanCanvas: React.FC = () => {
               </span>
               <span className="text-emerald-700 font-semibold flex items-center gap-1">
                 <Sun size={12} />
-                TGSPDCL Solar Window ₹4.40/kWh (10:00 - 16:00 IST)
+                TGSPDCL Solar Window ₹6.00/kWh (10:00 - 16:00 IST)
               </span>
             </div>
 
@@ -219,7 +220,7 @@ export const PlanCanvas: React.FC = () => {
             {zoomLevel === '4h' ? (
               <div className="h-4 w-full rounded flex overflow-hidden text-[9px] font-bold text-center">
                 <div className="w-[75%] bg-amber-100 text-amber-900 border-r border-amber-300 flex items-center justify-center">
-                  Peak Solar Window ₹4.40/kWh (13:00 - 16:00)
+                  Peak Solar Window ₹6.00/kWh (13:00 - 16:00)
                 </div>
                 <div className="w-[25%] bg-red-100 text-red-900 flex items-center justify-center">
                   Evening Peak ₹9.20/kWh (16:00 - 17:00)
@@ -231,7 +232,7 @@ export const PlanCanvas: React.FC = () => {
                   Base Tariff ₹7.50 (06:00 - 10:00)
                 </div>
                 <div className="w-[50%] bg-amber-100 text-amber-900 border-r border-amber-300 flex items-center justify-center">
-                  Peak Solar Window ₹4.40/kWh (10:00 - 16:00)
+                  Peak Solar Window ₹6.00/kWh (10:00 - 16:00)
                 </div>
                 <div className="w-[16.7%] bg-red-100 text-red-900 flex items-center justify-center">
                   Evening Peak ₹9.20 (16:00 - 18:00)
@@ -242,13 +243,13 @@ export const PlanCanvas: React.FC = () => {
               <div className="h-4 w-full rounded flex overflow-hidden text-[8px] font-bold text-center">
                 <div className="w-[50%] flex border-r-2 border-slate-400">
                   <div className="w-[20.8%] bg-slate-100 text-slate-700 flex items-center justify-center">D1 Off-Peak</div>
-                  <div className="w-[25%] bg-amber-100 text-amber-900 flex items-center justify-center border-x border-amber-300">D1 Solar (₹4.40)</div>
+                  <div className="w-[25%] bg-amber-100 text-amber-900 flex items-center justify-center border-x border-amber-300">D1 Solar (₹6.00)</div>
                   <div className="w-[16.7%] bg-red-100 text-red-900 flex items-center justify-center border-r border-red-300">D1 Peak (₹9.20)</div>
                   <div className="w-[37.5%] bg-slate-100 text-slate-700 flex items-center justify-center">D1 Night Shift</div>
                 </div>
                 <div className="w-[50%] flex">
                   <div className="w-[20.8%] bg-slate-100 text-slate-700 flex items-center justify-center">D2 Off-Peak</div>
-                  <div className="w-[25%] bg-amber-100 text-amber-900 flex items-center justify-center border-x border-amber-300">D2 Solar (₹4.40)</div>
+                  <div className="w-[25%] bg-amber-100 text-amber-900 flex items-center justify-center border-x border-amber-300">D2 Solar (₹6.00)</div>
                   <div className="w-[16.7%] bg-red-100 text-red-900 flex items-center justify-center border-r border-red-300">D2 Peak (₹9.20)</div>
                   <div className="w-[37.5%] bg-slate-100 text-slate-700 flex items-center justify-center">D2 Night Shift</div>
                 </div>
@@ -324,7 +325,7 @@ export const PlanCanvas: React.FC = () => {
                       Offset: +{station.offsetC}°C ({station.metabolicClass})
                     </span>
                     <span className="font-mono font-bold text-[#1B1F24] bg-white px-1.5 py-0.5 rounded border border-[#D9DDE2]">
-                      {station.currentWBGTEstimate}°C WBGT
+                      {station.currentWBGTEstimate}°C screening estimate
                     </span>
 
                     {/* Compact Crew Dropdown (SOLVES THE 15-BOX CLUTTER) */}
@@ -374,7 +375,7 @@ export const PlanCanvas: React.FC = () => {
                                       </span>
                                     )}
                                   </div>
-                                  <div className="text-[10px] text-[#5B636E]">{w.role} • {w.phone}</div>
+                                  <div className="text-[10px] text-[#5B636E]">{w.role} • {maskPhone(w.phone)}</div>
                                 </div>
                                 <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
                                   w.status === 'resting'
@@ -546,7 +547,7 @@ export const PlanCanvas: React.FC = () => {
                           {station.currentWBGTEstimate && (
                             <>
                               <span>•</span>
-                              <span className="text-slate-700 font-semibold">{station.currentWBGTEstimate}°C WBGT</span>
+                              <span className="text-slate-700 font-semibold">{station.currentWBGTEstimate}°C screening estimate</span>
                             </>
                           )}
                         </div>

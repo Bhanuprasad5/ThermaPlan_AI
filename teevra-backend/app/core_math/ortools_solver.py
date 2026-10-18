@@ -267,8 +267,15 @@ class TeevraCPSATScheduler:
         if frozen_window and previous_assignments:
             f_start, f_end = frozen_window
             for (jid, t), prev_val in previous_assignments.items():
-                if f_start <= t <= f_end and (jid, t) in x_vars:
-                    model.Add(x_vars[(jid, t)] == prev_val)
+                if (jid, t) in x_vars:
+                    # 5a. Lock completed past operations before fault slot
+                    if t < f_start:
+                        model.Add(x_vars[(jid, t)] == prev_val)
+                    # 5b. Lock healthy lines during 2-hour frozen window [f_start, f_end]
+                    elif f_start <= t <= f_end:
+                        job_obj = next((j for j in self.orders if f"{j.order_id}_{j.routing_seq}" == jid), None)
+                        if not (job_obj and job_obj.machine_id == faulted_machine_id):
+                            model.Add(x_vars[(jid, t)] == prev_val)
 
         if faulted_machine_id and fault_slot is not None and repair_duration_slots is not None:
             repair_end = min(self.total_slots, fault_slot + repair_duration_slots)
@@ -306,6 +313,8 @@ class TeevraCPSATScheduler:
 
         solver = cp_model.CpSolver()
         solver.parameters.max_time_in_seconds = 10.0
+        solver.parameters.random_seed = 42
+        solver.parameters.num_search_workers = 1
         status = solver.Solve(model)
         solve_duration = round(time.time() - start_time, 2)
         status_str = "OPTIMAL" if status == cp_model.OPTIMAL else ("FEASIBLE" if status == cp_model.FEASIBLE else "INFEASIBLE")

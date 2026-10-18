@@ -56,24 +56,25 @@ export function mapPlanToMetrics(plan: SchedulePlanResponse, previousMetrics?: R
   const baseKpi = plan.baseline_kpi || (plan as any).baseline_kpi_summary;
   const prev = previousMetrics || INITIAL_METRICS;
 
-  const costBefore = baseKpi?.total_cost_inr ? Math.round(baseKpi.total_cost_inr) : prev.inrCostBefore || 112450;
-  const costAfter = kpi.total_cost_inr ? Math.round(kpi.total_cost_inr) : prev.inrCostAfter || 98250;
-  const kwhBefore = baseKpi?.total_kwh ? Math.round(baseKpi.total_kwh) : prev.energyKwhBefore || 14280;
-  const kwhAfter = kpi.total_kwh ? Math.round(kpi.total_kwh) : prev.energyKwhAfter || 13890;
+  const costBefore = baseKpi?.total_cost_inr !== undefined ? Math.round(baseKpi.total_cost_inr) : prev.inrCostBefore;
+  const costAfter = kpi.total_cost_inr !== undefined ? Math.round(kpi.total_cost_inr) : prev.inrCostAfter;
+  const kwhBefore = baseKpi?.total_kwh !== undefined ? Math.round(baseKpi.total_kwh) : prev.energyKwhBefore;
+  const kwhAfter = kpi.total_kwh !== undefined ? Math.round(kpi.total_kwh) : prev.energyKwhAfter;
+  const co2Saved = kpi.co2_saved_tco2 !== undefined ? +(kpi.co2_saved_tco2).toFixed(2) : (prev.co2SavedTons ?? 0.0);
 
   return {
-    heatBreachesBefore: prev.heatBreachesBefore || 28,
+    heatBreachesBefore: baseKpi?.heat_breaches_count ?? prev.heatBreachesBefore ?? 20,
     heatBreachesAfter: kpi.heat_breaches_count ?? 0,
-    outputPct: kpi.output_percentage ? +(kpi.output_percentage).toFixed(1) : 100.0,
-    outputPctBefore: prev.outputPctBefore || 96.8,
+    outputPct: kpi.output_percentage !== undefined ? +(kpi.output_percentage).toFixed(1) : 100.0,
+    outputPctBefore: baseKpi?.output_percentage !== undefined ? +(baseKpi.output_percentage).toFixed(1) : 100.0,
     energyKwhBefore: kwhBefore,
     energyKwhAfter: kwhAfter,
     inrCostBefore: costBefore,
     inrCostAfter: costAfter,
     minMarginC: 2.1,
-    restartsCount: kpi.total_restarts ?? prev.restartsCount ?? 1,
+    restartsCount: kpi.total_restarts ?? prev.restartsCount ?? 4,
     bufferCostPct: 1.6,
-    co2SavedTons: kpi.co2_saved_tco2 ? +(kpi.co2_saved_tco2).toFixed(2) : prev.co2SavedTons || 0.26,
+    co2SavedTons: co2Saved,
     solverSeed: 42,
     planHash: plan.plan_id ? plan.plan_id.replace('PLAN_', '').substring(0, 6) : '7f9a2b',
     solverTimestamp: new Date().toLocaleTimeString('en-US', { hour12: false }),
@@ -217,3 +218,12 @@ export function updateStationsFromPlan(stations: Station[], slots?: ScheduleSlot
     };
   });
 }
+
+/**
+ * Masks worker phone numbers for privacy compliance (+91 98*** **000)
+ */
+export function maskPhone(phone?: string): string {
+  if (!phone) return '';
+  return phone.replace(/(\+91\s*\d{2})\d{3}\s*(\d{2})(\d{3})/, '$1*** **$3');
+}
+

@@ -1,0 +1,46 @@
+upload_batch_id,order_id,job_name,machine_id,station_id,routing_seq,duration_mins,duration_slots,kwh_per_op,restart_kwh,load_tag,splittable,due_slot,is_critical_melt
+BATCH_TUE_EV_02,ORD_EV_01,EV Powertrain & Copper Rotor Casting - High Temp Primary Melt (Batch #01),FURNACE_1,FURNACE_BAY,1,180,12,459.9,119.3,fixed,False,42,True
+BATCH_TUE_EV_02,ORD_EV_02,EV Powertrain & Copper Rotor Casting - Precision Ingot Continuous Pour (Batch #02),FURNACE_2,FURNACE_BAY,1,150,10,389.4,94.4,fixed,False,42,True
+BATCH_TUE_EV_02,ORD_EV_03,EV Powertrain & Copper Rotor Casting - Billet Induction Pre-Heating (Batch #03),FURNACE_3,FURNACE_BAY,1,210,14,446.9,110.1,fixed,False,44,True
+BATCH_TUE_EV_02,ORD_EV_04,Pre-Sorted Scrap Staging & Charge Prep (Batch #04),CHARGING_BAY,FURNACE_BAY,1,120,8,109.2,14.7,fixed,False,31,False
+BATCH_TUE_EV_02,ORD_EV_05,Heavy Gantry Milling Rough Stage (Batch #05),CNC_1,CNC_BAY,2,180,12,191.8,20.1,fixed,False,66,False
+BATCH_TUE_EV_02,ORD_EV_06,5-Axis High-Tolerance Complex Contouring (Batch #06),CNC_2,CNC_BAY,3,240,16,210.0,24.7,shiftable,False,80,False
+BATCH_TUE_EV_02,ORD_EV_07,Axial Journal High-Speed Lathe Turning (Batch #07),CNC_3,CNC_BAY,2,210,14,167.2,17.5,shiftable,False,80,False
+BATCH_TUE_EV_02,ORD_EV_08,Multitasking Complex Flange Pocketing (Batch #08),CNC_4,CNC_BAY,2,180,12,164.3,15.4,shiftable,False,84,False
+BATCH_TUE_EV_02,ORD_EV_09,Micro-Precision Diamond Honing & Deburr (Batch #09),CNC_5,CNC_BAY,3,120,8,88.5,9.5,shiftable,False,90,False
+BATCH_TUE_EV_02,ORD_EV_10,Anti-Corrosive Thermal Barrier Coating (Batch #10),PAINT_BOOTH,PAINT_SHOP,4,180,12,238.3,28.9,shiftable,False,102,False
+BATCH_TUE_EV_02,ORD_EV_11,Infrared Epoxy Powder Polymerization (Batch #11),OVEN_2,PAINT_SHOP,4,210,14,275.5,35.0,shiftable,False,109,False
+BATCH_TUE_EV_02,ORD_EV_12,Controlled Atmosphere Vacuum Quench & Temper (Batch #12),HEAT_TREAT_1,OVEN_BAY,5,270,18,401.9,47.9,shiftable,False,121,False
+BATCH_TUE_EV_02,ORD_EV_13,Robotic High-Torque Sub-Assembly Staging (Batch #13),ASSEMBLY_1,ASSEMBLY_BAY,6,150,10,42.9,7.6,fixed,False,137,False
+BATCH_TUE_EV_02,ORD_EV_14,Final Structural Bolting & Fastener Torqueing (Batch #14),ASSEMBLY_2,ASSEMBLY_BAY,6,180,12,57.0,10.1,fixed,False,137,False
+BATCH_TUE_EV_02,ORD_EV_15,Laser CMM Micron Scan & NDT Ultrasonic Check (Batch #15),QUALITY_INSPECT,QUALITY_BAY,7,90,6,29.7,5.1,shiftable,False,155,False
+BATCH_TUE_EV_02,ORD_EV_16,Central Glycol Chiller Thermal Pre-Cooling (Batch #16),CHILLER_1,UTILITY_ROOM,1,240,16,211.5,9.5,interruptible,True,160,False
+BATCH_TUE_EV_02,ORD_EV_17,EV Powertrain & Copper Rotor Casting - High Temp Primary Melt (Batch #17),FURNACE_1,FURNACE_BAY,1,180,12,464.2,125.4,fixed,False,85,True
+BATCH_TUE_EV_02,ORD_EV_18,EV Powertrain & Copper Rotor Casting - Precision Ingot Continuous Pour (Batch #18),FURNACE_2,FURNACE_BAY,1,150,10,402.9,99.0,fixed,False,91,True
+BATCH_TUE_EV_02,ORD_EV_19,EV Powertrain & Copper Rotor Casting - Billet Induction Pre-Heating (Batch #19),FURNACE_3,FURNACE_BAY,1,210,14,457.1,105.7,fixed,False,89,True
+BATCH_TUE_EV_02,ORD_EV_20,Pre-Sorted Scrap Staging & Charge Prep (Batch #20),CHARGING_BAY,FURNACE_BAY,1,120,8,111.0,15.0,fixed,False,80,False
+BATCH_TUE_EV_02,ORD_EV_21,Heavy Gantry Milling Rough Stage (Batch #21),CNC_1,CNC_BAY,2,180,12,197.0,20.5,fixed,False,110,False
+BATCH_TUE_EV_02,ORD_EV_22,5-Axis High-Tolerance Complex Contouring (Batch #22),CNC_2,CNC_BAY,3,240,16,216.3,24.2,shiftable,False,127,False
+BATCH_TUE_EV_02,ORD_EV_23,Axial Journal High-Speed Lathe Turning (Batch #23),CNC_3,CNC_BAY,2,210,14,177.3,18.1,shiftable,False,127,False
+BATCH_TUE_EV_02,ORD_EV_24,Multitasking Complex Flange Pocketing (Batch #24),CNC_4,CNC_BAY,2,180,12,166.5,14.8,shiftable,False,132,False
+BATCH_TUE_EV_02,ORD_EV_25,Micro-Precision Diamond Honing & Deburr (Batch #25),CNC_5,CNC_BAY,3,120,8,94.1,10.1,shiftable,False,145,False
+BATCH_TUE_EV_02,ORD_EV_26,Anti-Corrosive Thermal Barrier Coating (Batch #26),PAINT_BOOTH,PAINT_SHOP,4,180,12,233.7,28.9,shiftable,False,141,False
+BATCH_TUE_EV_02,ORD_EV_27,Infrared Epoxy Powder Polymerization (Batch #27),OVEN_2,PAINT_SHOP,4,210,14,261.2,33.8,shiftable,False,152,False
+BATCH_TUE_EV_02,ORD_EV_28,Controlled Atmosphere Vacuum Quench & Temper (Batch #28),HEAT_TREAT_1,OVEN_BAY,5,270,18,396.1,48.4,shiftable,False,171,False
+BATCH_TUE_EV_02,ORD_EV_29,Robotic High-Torque Sub-Assembly Staging (Batch #29),ASSEMBLY_1,ASSEMBLY_BAY,6,150,10,45.6,8.0,fixed,False,186,False
+BATCH_TUE_EV_02,ORD_EV_30,Final Structural Bolting & Fastener Torqueing (Batch #30),ASSEMBLY_2,ASSEMBLY_BAY,6,180,12,56.4,9.9,fixed,False,191,False
+BATCH_TUE_EV_02,ORD_EV_31,Laser CMM Micron Scan & NDT Ultrasonic Check (Batch #31),QUALITY_INSPECT,QUALITY_BAY,7,90,6,30.4,5.2,shiftable,False,191,False
+BATCH_TUE_EV_02,ORD_EV_32,Central Glycol Chiller Thermal Pre-Cooling (Batch #32),CHILLER_1,UTILITY_ROOM,1,240,16,228.0,10.1,interruptible,True,191,False
+BATCH_TUE_EV_02,ORD_EV_33,EV Powertrain & Copper Rotor Casting - High Temp Primary Melt (Batch #33),FURNACE_1,FURNACE_BAY,1,180,12,477.1,119.6,fixed,False,130,True
+BATCH_TUE_EV_02,ORD_EV_34,EV Powertrain & Copper Rotor Casting - Precision Ingot Continuous Pour (Batch #34),FURNACE_2,FURNACE_BAY,1,150,10,382.3,92.9,fixed,False,142,True
+BATCH_TUE_EV_02,ORD_EV_35,EV Powertrain & Copper Rotor Casting - Billet Induction Pre-Heating (Batch #35),FURNACE_3,FURNACE_BAY,1,210,14,453.2,105.3,fixed,False,136,True
+BATCH_TUE_EV_02,ORD_EV_36,Pre-Sorted Scrap Staging & Charge Prep (Batch #36),CHARGING_BAY,FURNACE_BAY,1,120,8,109.5,14.3,fixed,False,129,False
+BATCH_TUE_EV_02,ORD_EV_37,Heavy Gantry Milling Rough Stage (Batch #37),CNC_1,CNC_BAY,2,180,12,182.0,20.7,fixed,False,156,False
+BATCH_TUE_EV_02,ORD_EV_38,5-Axis High-Tolerance Complex Contouring (Batch #38),CNC_2,CNC_BAY,3,240,16,222.5,25.0,shiftable,False,173,False
+BATCH_TUE_EV_02,ORD_EV_39,Axial Journal High-Speed Lathe Turning (Batch #39),CNC_3,CNC_BAY,2,210,14,176.4,18.8,shiftable,False,174,False
+BATCH_TUE_EV_02,ORD_EV_40,Multitasking Complex Flange Pocketing (Batch #40),CNC_4,CNC_BAY,2,180,12,166.3,14.9,shiftable,False,188,False
+BATCH_TUE_EV_02,ORD_EV_41,Micro-Precision Diamond Honing & Deburr (Batch #41),CNC_5,CNC_BAY,3,120,8,90.6,9.7,shiftable,False,191,False
+BATCH_TUE_EV_02,ORD_EV_42,Anti-Corrosive Thermal Barrier Coating (Batch #42),PAINT_BOOTH,PAINT_SHOP,4,180,12,239.4,29.0,shiftable,False,191,False
+BATCH_TUE_EV_02,ORD_EV_43,Infrared Epoxy Powder Polymerization (Batch #43),OVEN_2,PAINT_SHOP,4,210,14,268.7,36.1,shiftable,False,191,False
+BATCH_TUE_EV_02,ORD_EV_44,Controlled Atmosphere Vacuum Quench & Temper (Batch #44),HEAT_TREAT_1,OVEN_BAY,5,270,18,408.8,47.9,shiftable,False,191,False
+BATCH_TUE_EV_02,ORD_EV_45,Robotic High-Torque Sub-Assembly Staging (Batch #45),ASSEMBLY_1,ASSEMBLY_BAY,6,150,10,43.5,7.8,fixed,False,191,False

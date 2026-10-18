@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     # GCP Project & Regions
     GCP_PROJECT_ID: str = "thermaplan-ai"
     GCP_REGION: str = "asia-south1"
-    VERTEX_REGION: str = "us-central1"
+    VERTEX_REGION: str = "global"
     VERTEX_LIVE_REGION: str = "us-central1"
 
     # BigQuery
@@ -42,9 +42,9 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     USE_MOCK_FALLBACK_IF_CLOUD_UNAVAILABLE: bool = True
 
-    # Vertex AI Model Names
-    GEMINI_FLASH_MODEL: str = "gemini-2.5-flash"
-    GEMINI_LIVE_MODEL: str = "gemini-2.5-flash"
+    # Vertex AI Model Names (Updated to gemini-3.8-flash)
+    GEMINI_FLASH_MODEL: str = "gemini-3.8-flash"
+    GEMINI_LIVE_MODEL: str = "gemini-3.8-flash"
 
 
 @lru_cache

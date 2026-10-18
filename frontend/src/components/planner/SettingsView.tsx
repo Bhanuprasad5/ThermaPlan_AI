@@ -14,6 +14,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { usePlant } from '../../context/PlantContext';
+import { maskPhone } from '../../utils/mapper';
 
 export const SettingsView: React.FC = () => {
   const { stations, workers, goBack, loadDemoPlant, triggerHeatRise } = usePlant();
@@ -210,7 +211,7 @@ export const SettingsView: React.FC = () => {
                   <tr key={w.id} className="hover:bg-slate-50">
                     <td className="p-3 font-semibold text-[#1B1F24]">{w.name}</td>
                     <td className="p-3 text-[#5B636E]">{w.role}</td>
-                    <td className="p-3 font-mono">{w.phone}</td>
+                    <td className="p-3 font-mono">{maskPhone(w.phone)}</td>
                     <td className="p-3">
                       {w.isFurnaceQualified ? (
                         <span className="bg-emerald-100 text-[#1E7A46] px-2 py-0.5 rounded font-bold">

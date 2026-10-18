@@ -46,7 +46,7 @@ async def trigger_machine_breakdown(req: MachineFaultWebhookRequest):
             "faulted_machine": req.machine_id,
             "fault_slot": req.fault_slot,
             "repair_slots": req.repair_duration_slots,
-            "alert": f"CNC_1 FAULT: {req.reason}. 2-hour frozen window locked.",
+            "alert": f"{req.machine_id} FAULT: {req.reason}. 2-hour frozen window locked.",
         },
     )
 
@@ -57,11 +57,14 @@ async def trigger_machine_breakdown(req: MachineFaultWebhookRequest):
     weather_slots = bq_service.get_weather_forecast_48h()
 
     # Build previous assignment map for healthy frozen window lock
+    order_seq_map = {o.order_id: o.routing_seq for o in orders}
     prev_assignments: dict[tuple, int] = {}
     if prev_plan:
         for slot in prev_plan.schedule_slots:
-            j_id = f"{slot.order_id}_1"
+            seq = order_seq_map.get(slot.order_id, 1)
+            j_id = f"{slot.order_id}_{seq}"
             prev_assignments[(j_id, slot.slot_index)] = 1 if slot.is_active else 0
+            prev_assignments[(f"{slot.order_id}_1", slot.slot_index)] = 1 if slot.is_active else 0
 
     frozen_start = req.fault_slot
     frozen_end = min(191, req.fault_slot + 7)  # 8 slots = 120 minutes
