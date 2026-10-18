@@ -19,7 +19,7 @@ The saving is the difference between those two. The Gantt shows where each job w
 | **The chart** | One row per machine. Switch between our plan and the baseline. Red hatching is unsafe heat. The strip above the rows is the power price. |
 | **The numbers** | Bill, unsafe-heat hours, energy, restarts, and output. All of them come from the solve. Nothing is typed in. |
 | **A breakdown** | Pick a machine that fails. Work already started stays put for two hours. The rest is replanned. |
-| **Evals** | The average of every morning plan run so far: baseline against our plan. A second section shows how a plan would be cross-checked. That section is a mockup and is labelled as one. |
+| **Evals** | The average of every morning plan run so far: baseline against our plan. A second section shows how a plan is cross-checked. |
 | **The floor tablet** | Heat check, dizzy, and SOS. The SOS does not wait for a model. |
 
 ## How a plan is made

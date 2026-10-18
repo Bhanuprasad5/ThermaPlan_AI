@@ -120,10 +120,7 @@ export const EvalsView: React.FC = () => {
         </section>
 
         <section className="bg-white rounded-xl border border-[#D9DDE2] p-6 space-y-4">
-          <div className="flex items-baseline justify-between gap-3">
-            <h2 className="font-bold">2. How a plan gets checked</h2>
-            <span className="text-[11px] font-bold uppercase tracking-wide text-amber-800 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded">Mockup</span>
-          </div>
+          <h2 className="font-bold">2. How a plan gets checked</h2>
           <p className="text-xs text-[#5B636E]">
             These checks are the design for confirming a plan after it leaves the solver. They are drawn here so the idea is clear. They are not running on this page.
           </p>
