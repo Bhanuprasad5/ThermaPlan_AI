@@ -162,7 +162,7 @@ export const SupervisorMode: React.FC<SupervisorModeProps> = ({ onExit }) => {
             Relief operator swap proposed: <strong>Ramesh</strong> for Suresh at Furnace 1.
           </p>
           <div className="text-[11px] text-[#FFC857]">
-            Plan approvals and re-plans remain strictly on Ravi&apos;s desktop console.
+            Plan approvals and re-plans remain strictly on the manager&apos;s desktop console.
           </div>
         </div>
       </div>

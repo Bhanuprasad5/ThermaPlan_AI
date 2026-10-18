@@ -8,7 +8,7 @@ Includes automatic BigQuery cached fallback and conservative safety degradation 
 import structlog
 
 from app.config import get_settings
-from app.core_math.carbon_tariff_calc import get_tgspdcl_tod_rate
+from app.core_math.carbon_tariff_calc import get_tgspdcl_tod_rate, hour_from_slot, operational_day
 from app.core_math.wbgt_calculator import calculate_stull_natural_wet_bulb
 from app.models.domain import WeatherSlot
 
@@ -22,27 +22,27 @@ class WeatherIntegrator:
         self.longitude = self.settings.PLANT_LONGITUDE
         self.cached_48h_slots: list[WeatherSlot] = []
 
-    # Replayed Hyderabad summer day, same every solve.
-    # 12:00-16:00 is the only furnace heat-breach window. CNC and the paint oven
-    # stay under their screening limit, so they can use the cheap solar hours.
-    # Outside that window the furnace is under its 26 C screening value, including
-    # the evening tariff peak, so the solver can show the trade honestly.
+    # Replayed Hyderabad summer day, keyed by clock hour. Same every solve.
+    # Class 3 furnaces breach 10:00-20:00. Class 1 (CNC, oven, assembly, quality)
+    # breaches only 12:00-16:00. Class 0 chiller and compressor stay under 33 C.
+    # Tuple is (air temp C, relative humidity %, ambient globe C).
     REPLAY_HOUR: dict[int, tuple[float, float, float]] = {
-        0: (27, 60, 28), 1: (26, 62, 27), 2: (26, 62, 27), 3: (25, 65, 26),
-        4: (25, 65, 26), 5: (25, 66, 26), 6: (26, 64, 27), 7: (27, 60, 28),
-        8: (28, 58, 29), 9: (29, 55, 30), 10: (31, 50, 33), 11: (33, 46, 35),
-        12: (38, 38, 41), 13: (40, 35, 43), 14: (41, 33, 44), 15: (40, 35, 43),
-        16: (35, 42, 37), 17: (33, 46, 35), 18: (32, 48, 33), 19: (31, 50, 32),
-        20: (30, 52, 31), 21: (29, 55, 30), 22: (28, 58, 29), 23: (27, 60, 28),
+        0: (26, 65, 30), 1: (26, 65, 30), 2: (26, 65, 30), 3: (26, 65, 30),
+        4: (26, 65, 30), 5: (26, 65, 30), 6: (26, 65, 30), 7: (26, 65, 30),
+        8: (27, 60, 31), 9: (27, 60, 31),
+        10: (31, 65, 34), 11: (31, 65, 34),
+        12: (36, 45, 40), 13: (36, 45, 40), 14: (36, 45, 40), 15: (36, 45, 40),
+        16: (31, 65, 34), 17: (31, 65, 34), 18: (31, 65, 34), 19: (31, 65, 34),
+        20: (26, 65, 30), 21: (26, 65, 30), 22: (26, 65, 30), 23: (26, 65, 30),
     }
 
     def _generate_synthetic_48h_baseline(self) -> list[WeatherSlot]:
         """48-hour replay of one Hyderabad summer day. Identical on every call."""
         slots = []
         for slot in range(192):
-            h = (slot // 4) % 24
-            m = (slot % 4) * 15
-            day = (slot // 96) + 1
+            h = hour_from_slot(slot, 15)
+            m = (slot * 15) % 60
+            day = operational_day(slot, 15)
             air_temp, rh, ambient_globe = self.REPLAY_HOUR[h]
             tw = calculate_stull_natural_wet_bulb(air_temp, rh)
             tod_info = get_tgspdcl_tod_rate(h)

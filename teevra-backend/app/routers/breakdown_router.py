@@ -11,11 +11,13 @@ import asyncio
 import structlog
 from fastapi import APIRouter, BackgroundTasks, HTTPException
 
+from app.core_math.monday_breakdown import is_monday_plan, reassign_monday_breakdown
 from app.core_math.ortools_solver import _job_key, solve_dual_schedules
 from app.core_math.plan_insights import machine_label, slot_clock
 from app.core_math.safety_validator import validate_delta_replan_safety
 from app.models.safety import MachineFaultWebhookRequest
 from app.models.schedule import SchedulePlanResponse
+from app.services import demo_plan_cache
 from app.services.bigquery_service import bq_service
 from app.services.firestore_fcm_service import firestore_fcm_service
 from app.services.gemini_flash_service import OFFICIAL_CITATIONS
@@ -37,6 +39,27 @@ async def trigger_machine_breakdown(req: MachineFaultWebhookRequest, background_
         raise HTTPException(status_code=400, detail=f"{req.machine_id} has no work in the active plan.")
 
     prev_plan = ctx.plan
+    if is_monday_plan(prev_plan, ctx.orders):
+        if prev_plan.plan_id.startswith("PLAN_DOWN_"):
+            return prev_plan
+        source = prev_plan
+        if prev_plan.trigger_type == "MACHINE_BREAKDOWN":
+            morning = demo_plan_cache.morning_plan(ctx.orders, prev_plan.plan_config)
+            if morning is not None:
+                source = morning
+        if source.trigger_type != "MACHINE_BREAKDOWN":
+            updated = reassign_monday_breakdown(source, req.machine_id, req.fault_slot)
+            run_history.set_active(ActiveContext(updated, ctx.orders, ctx.rosters, ctx.weather))
+            run_history.record(updated)
+            return updated
+
+    cached = demo_plan_cache.breakdown_plan(prev_plan.plan_id, req)
+    if cached is not None:
+        run_history.set_active(ActiveContext(cached, ctx.orders, ctx.rosters, ctx.weather))
+        if not any(r.get("plan_id") == cached.plan_id for r in run_history.runs):
+            run_history.record(cached)
+        return cached
+
     seq_by_job = {(o.order_id, o.machine_id): _job_key(o) for o in ctx.orders}
     prev_assignments: dict[tuple[str, int], int] = {}
     for slot in prev_plan.schedule_slots:

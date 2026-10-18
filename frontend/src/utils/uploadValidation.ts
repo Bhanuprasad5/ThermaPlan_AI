@@ -57,7 +57,7 @@ export const UPLOAD_SCHEMAS: Record<UploadKind, UploadSchema> = {
   orders: {
     title: 'Plant orders',
     mandatory: [
-      { name: 'order_id', description: 'Unique order reference, for example ORD_AERO_01' },
+      { name: 'order_id', description: 'Order reference, for example ORD_AERO_01. Same id may repeat when routing_seq differs' },
       { name: 'job_name', description: 'Readable job description' },
       { name: 'machine_id', description: 'Machine that runs the job, for example FURNACE_1' },
       { name: 'station_id', description: 'Station the machine belongs to, for example FURNACE_BAY' },
@@ -307,17 +307,24 @@ export function validateUpload(kind: UploadKind, fileName: string, text: string)
   });
 
   if (schema.uniqueColumn && !missing.has(schema.uniqueColumn)) {
-    const seen = new Map<string, number[]>();
+    const seen = new Map<string, { display: string; rows: number[] }>();
     rows.forEach((row, idx) => {
       const value = row[schema.uniqueColumn!];
       if (isBlank(value)) return;
-      const list = seen.get(value) ?? [];
-      list.push(idx + 2);
-      seen.set(value, list);
+      const routing = kind === 'orders' ? (row.routing_seq || '1') : '';
+      const key = routing ? `${value}|${routing}` : value;
+      const display = routing && routing !== '1' ? `${value} (routing ${routing})` : value;
+      const entry = seen.get(key) ?? { display, rows: [] };
+      entry.rows.push(idx + 2);
+      seen.set(key, entry);
     });
-    for (const [value, list] of seen) {
-      if (list.length > 1) {
-        groups.set(`dup|${value}`, { column: schema.uniqueColumn, problem: `has a duplicate value "${value}"`, rows: list });
+    for (const [key, entry] of seen) {
+      if (entry.rows.length > 1) {
+        groups.set(`dup|${key}`, {
+          column: schema.uniqueColumn,
+          problem: `has a duplicate value "${entry.display}"`,
+          rows: entry.rows,
+        });
       }
     }
   }

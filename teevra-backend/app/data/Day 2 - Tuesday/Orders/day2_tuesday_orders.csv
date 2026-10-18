@@ -1,9 +1,44 @@
 upload_batch_id,order_id,job_name,machine_id,station_id,routing_seq,duration_mins,duration_slots,kwh_per_op,restart_kwh,load_tag,splittable,due_slot,is_critical_melt
-BATCH_TUE,TUE-01,Housing melt,FURNACE_1,FURNACE_BAY,1,240,16,240,10,fixed,False,191,True
-BATCH_TUE,TUE-01,Housing machining,CNC_1,CNC_BAY,2,180,12,90,4,shiftable,False,191,False
-BATCH_TUE,TUE-02,Cover melt,FURNACE_2,FURNACE_BAY,1,240,16,240,10,fixed,False,191,True
-BATCH_TUE,TUE-02,Cover machining,CNC_2,CNC_BAY,2,180,12,90,4,shiftable,False,191,False
-BATCH_TUE,TUE-03,Primer cure,OVEN_1,OVEN_1,1,180,12,120,5,shiftable,False,191,False
-BATCH_TUE,TUE-04,Top coat cure,OVEN_1,OVEN_1,1,180,12,120,5,shiftable,False,191,False
-BATCH_TUE,TUE-05,Ice bank charge,CHILLER_1,CHILLER_1,1,240,16,120,15,interruptible,True,191,False
-BATCH_TUE,TUE-06,Compressed air,COMP_1,COMP_1,1,180,12,90,4,shiftable,False,191,False
+BATCH_TUE,TUE-001,housings melt night,FURNACE_1,FURNACE_1,1,600,40,8330.0,50,fixed,False,191,True
+BATCH_TUE,TUE-002,housings melt late,FURNACE_1,FURNACE_1,1,600,40,8330.0,50,fixed,False,191,True
+BATCH_TUE,TUE-003,housings melt night,FURNACE_2,FURNACE_2,1,600,40,8330.0,50,fixed,False,191,True
+BATCH_TUE,TUE-004,housings melt late,FURNACE_2,FURNACE_2,1,600,40,8330.0,50,fixed,False,191,True
+BATCH_TUE,TUE-005,housings melt night,FURNACE_3,FURNACE_3,1,600,40,8330.0,50,fixed,False,191,True
+BATCH_TUE,TUE-006,housings melt late,FURNACE_3,FURNACE_3,1,600,40,8330.0,50,fixed,False,191,True
+BATCH_TUE,TUE-007,housings charge night,CHARGE_1,CHARGING_BAY,1,600,40,1568.0,8.0,shiftable,False,191,False
+BATCH_TUE,TUE-008,housings charge late,CHARGE_1,CHARGING_BAY,1,600,40,1568.0,8.0,shiftable,False,191,False
+BATCH_TUE,TUE-009,housings setup,CNC_1,CNC_1,1,480,32,313.6,8.0,shiftable,False,191,False
+BATCH_TUE,TUE-010,housings heavy,CNC_1,CNC_1,1,600,40,6076.0,8.0,shiftable,False,191,False
+BATCH_TUE,TUE-011,housings follow,CNC_1,CNC_1,1,720,48,940.8,8.0,shiftable,False,191,False
+BATCH_TUE,TUE-012,housings setup,CNC_2,CNC_2,1,480,32,313.6,8.0,shiftable,False,191,False
+BATCH_TUE,TUE-013,housings heavy,CNC_2,CNC_2,1,600,40,6076.0,8.0,shiftable,False,191,False
+BATCH_TUE,TUE-014,housings follow,CNC_2,CNC_2,1,720,48,940.8,8.0,shiftable,False,191,False
+BATCH_TUE,TUE-015,housings setup,CNC_3,CNC_3,1,480,32,313.6,8.0,shiftable,False,191,False
+BATCH_TUE,TUE-016,housings heavy,CNC_3,CNC_3,1,600,40,6076.0,8.0,shiftable,False,191,False
+BATCH_TUE,TUE-017,housings follow,CNC_3,CNC_3,1,720,48,940.8,8.0,shiftable,False,191,False
+BATCH_TUE,TUE-018,housings setup,CNC_4,CNC_4,1,480,32,313.6,8.0,shiftable,False,191,False
+BATCH_TUE,TUE-019,housings heavy,CNC_4,CNC_4,1,600,40,6076.0,8.0,shiftable,False,191,False
+BATCH_TUE,TUE-020,housings follow,CNC_4,CNC_4,1,720,48,940.8,8.0,shiftable,False,191,False
+BATCH_TUE,TUE-021,housings setup,CNC_5,CNC_5,1,480,32,313.6,8.0,shiftable,False,191,False
+BATCH_TUE,TUE-022,housings heavy,CNC_5,CNC_5,1,600,40,6076.0,8.0,shiftable,False,191,False
+BATCH_TUE,TUE-023,housings follow,CNC_5,CNC_5,1,720,48,940.8,8.0,shiftable,False,191,False
+BATCH_TUE,TUE-024,housings setup,OVEN_1,OVEN_1,1,480,32,313.6,8.0,shiftable,False,191,False
+BATCH_TUE,TUE-025,housings heavy,OVEN_1,OVEN_1,1,600,40,4704.0,8.0,shiftable,False,191,False
+BATCH_TUE,TUE-026,housings follow,OVEN_1,OVEN_1,1,720,48,940.8,8.0,shiftable,False,191,False
+BATCH_TUE,TUE-027,housings setup,OVEN_2,OVEN_2,1,480,32,313.6,8.0,shiftable,False,191,False
+BATCH_TUE,TUE-028,housings heavy,OVEN_2,OVEN_2,1,600,40,4704.0,8.0,shiftable,False,191,False
+BATCH_TUE,TUE-029,housings follow,OVEN_2,OVEN_2,1,720,48,940.8,8.0,shiftable,False,191,False
+BATCH_TUE,TUE-030,housings quench night,QUENCH_1,HEAT_TREAT_1,1,600,40,1568.0,8.0,shiftable,False,191,False
+BATCH_TUE,TUE-031,housings quench late,QUENCH_1,HEAT_TREAT_1,1,600,40,1568.0,8.0,shiftable,False,191,False
+BATCH_TUE,TUE-032,housings setup,ASSEMBLY_1,ASSEMBLY_1,1,480,32,313.6,8.0,shiftable,False,191,False
+BATCH_TUE,TUE-033,housings heavy,ASSEMBLY_1,ASSEMBLY_1,1,600,40,3528.0,8.0,shiftable,False,191,False
+BATCH_TUE,TUE-034,housings follow,ASSEMBLY_1,ASSEMBLY_1,1,720,48,940.8,8.0,shiftable,False,191,False
+BATCH_TUE,TUE-035,housings setup,QUALITY_1,QUALITY_INSPECT,1,480,32,313.6,8.0,shiftable,False,160,False
+BATCH_TUE,TUE-036,housings heavy,QUALITY_1,QUALITY_INSPECT,1,600,40,3528.0,8.0,shiftable,False,191,False
+BATCH_TUE,TUE-037,housings follow,QUALITY_1,QUALITY_INSPECT,1,720,48,940.8,8.0,shiftable,False,191,False
+BATCH_TUE,TUE-038,ice bank trim,CHILLER_1,CHILLER_1,1,480,32,313.6,8.0,interruptible,False,191,False
+BATCH_TUE,TUE-039,ice bank heavy,CHILLER_1,CHILLER_1,1,600,40,7644.0,10,interruptible,False,191,False
+BATCH_TUE,TUE-040,ice bank hold,CHILLER_1,CHILLER_1,1,720,48,1058.4,8.0,interruptible,False,191,False
+BATCH_TUE,TUE-041,compressed air trim,COMP_1,COMP_1,1,480,32,313.6,8.0,interruptible,False,191,False
+BATCH_TUE,TUE-042,compressed air heavy,COMP_1,COMP_1,1,600,40,7644.0,10,interruptible,False,191,False
+BATCH_TUE,TUE-043,compressed air hold,COMP_1,COMP_1,1,720,48,1058.4,8.0,interruptible,False,191,False

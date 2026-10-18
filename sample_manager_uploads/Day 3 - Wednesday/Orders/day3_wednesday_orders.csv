@@ -1,8 +1,44 @@
 upload_batch_id,order_id,job_name,machine_id,station_id,routing_seq,duration_mins,duration_slots,kwh_per_op,restart_kwh,load_tag,splittable,due_slot,is_critical_melt
-BATCH_WED,WED-01,Gear blank melt 1,FURNACE_1,FURNACE_BAY,1,240,16,260,10,fixed,False,191,True
-BATCH_WED,WED-02,Gear blank melt 2,FURNACE_1,FURNACE_BAY,1,240,16,260,10,fixed,False,191,True
-BATCH_WED,WED-03,Gear blank melt 3,FURNACE_1,FURNACE_BAY,1,240,16,260,10,fixed,False,191,True
-BATCH_WED,WED-04,Shaft billet melt,FURNACE_2,FURNACE_BAY,1,300,20,300,12,fixed,False,191,True
-BATCH_WED,WED-05,Gear hobbing,CNC_1,CNC_BAY,1,120,8,70,4,shiftable,False,191,False
-BATCH_WED,WED-06,Spline cutting,CNC_2,CNC_BAY,1,120,8,70,4,shiftable,False,191,False
-BATCH_WED,WED-07,Compressed air,COMP_1,COMP_1,1,240,16,120,4,shiftable,False,191,False
+BATCH_WED,WED-001,gearbox melt night,FURNACE_1,FURNACE_1,1,600,40,8755.0,50,fixed,False,191,True
+BATCH_WED,WED-002,gearbox melt late,FURNACE_1,FURNACE_1,1,600,40,8755.0,50,fixed,False,191,True
+BATCH_WED,WED-003,gearbox melt night,FURNACE_2,FURNACE_2,1,600,40,8755.0,50,fixed,False,191,True
+BATCH_WED,WED-004,gearbox melt late,FURNACE_2,FURNACE_2,1,600,40,8755.0,50,fixed,False,191,True
+BATCH_WED,WED-005,gearbox melt night,FURNACE_3,FURNACE_3,1,600,40,8755.0,50,fixed,False,191,True
+BATCH_WED,WED-006,gearbox melt late,FURNACE_3,FURNACE_3,1,600,40,8755.0,50,fixed,False,191,True
+BATCH_WED,WED-007,gearbox charge night,CHARGE_1,CHARGING_BAY,1,600,40,1648.0,8.0,shiftable,False,191,False
+BATCH_WED,WED-008,gearbox charge late,CHARGE_1,CHARGING_BAY,1,600,40,1648.0,8.0,shiftable,False,191,False
+BATCH_WED,WED-009,gearbox setup,CNC_1,CNC_1,1,480,32,329.6,8.0,shiftable,False,191,False
+BATCH_WED,WED-010,gearbox heavy,CNC_1,CNC_1,1,600,40,6386.0,8.0,shiftable,False,191,False
+BATCH_WED,WED-011,gearbox follow,CNC_1,CNC_1,1,720,48,988.8,8.0,shiftable,False,191,False
+BATCH_WED,WED-012,gearbox setup,CNC_2,CNC_2,1,480,32,329.6,8.0,shiftable,False,191,False
+BATCH_WED,WED-013,gearbox heavy,CNC_2,CNC_2,1,600,40,6386.0,8.0,shiftable,False,191,False
+BATCH_WED,WED-014,gearbox follow,CNC_2,CNC_2,1,720,48,988.8,8.0,shiftable,False,191,False
+BATCH_WED,WED-015,gearbox setup,CNC_3,CNC_3,1,480,32,329.6,8.0,shiftable,False,191,False
+BATCH_WED,WED-016,gearbox heavy,CNC_3,CNC_3,1,600,40,6386.0,8.0,shiftable,False,191,False
+BATCH_WED,WED-017,gearbox follow,CNC_3,CNC_3,1,720,48,988.8,8.0,shiftable,False,191,False
+BATCH_WED,WED-018,gearbox setup,CNC_4,CNC_4,1,480,32,329.6,8.0,shiftable,False,191,False
+BATCH_WED,WED-019,gearbox heavy,CNC_4,CNC_4,1,600,40,6386.0,8.0,shiftable,False,191,False
+BATCH_WED,WED-020,gearbox follow,CNC_4,CNC_4,1,720,48,988.8,8.0,shiftable,False,191,False
+BATCH_WED,WED-021,gearbox setup,CNC_5,CNC_5,1,480,32,329.6,8.0,shiftable,False,191,False
+BATCH_WED,WED-022,gearbox heavy,CNC_5,CNC_5,1,600,40,6386.0,8.0,shiftable,False,191,False
+BATCH_WED,WED-023,gearbox follow,CNC_5,CNC_5,1,720,48,988.8,8.0,shiftable,False,191,False
+BATCH_WED,WED-024,gearbox setup,OVEN_1,OVEN_1,1,480,32,329.6,8.0,shiftable,False,191,False
+BATCH_WED,WED-025,gearbox heavy,OVEN_1,OVEN_1,1,600,40,4944.0,8.0,shiftable,False,191,False
+BATCH_WED,WED-026,gearbox follow,OVEN_1,OVEN_1,1,720,48,988.8,8.0,shiftable,False,191,False
+BATCH_WED,WED-027,gearbox setup,OVEN_2,OVEN_2,1,480,32,329.6,8.0,shiftable,False,191,False
+BATCH_WED,WED-028,gearbox heavy,OVEN_2,OVEN_2,1,600,40,4944.0,8.0,shiftable,False,191,False
+BATCH_WED,WED-029,gearbox follow,OVEN_2,OVEN_2,1,720,48,988.8,8.0,shiftable,False,191,False
+BATCH_WED,WED-030,gearbox quench night,QUENCH_1,HEAT_TREAT_1,1,600,40,1648.0,8.0,shiftable,False,191,False
+BATCH_WED,WED-031,gearbox quench late,QUENCH_1,HEAT_TREAT_1,1,600,40,1648.0,8.0,shiftable,False,191,False
+BATCH_WED,WED-032,gearbox setup,ASSEMBLY_1,ASSEMBLY_1,1,480,32,329.6,8.0,shiftable,False,191,False
+BATCH_WED,WED-033,gearbox heavy,ASSEMBLY_1,ASSEMBLY_1,1,600,40,3708.0,8.0,shiftable,False,191,False
+BATCH_WED,WED-034,gearbox follow,ASSEMBLY_1,ASSEMBLY_1,1,720,48,988.8,8.0,shiftable,False,191,False
+BATCH_WED,WED-035,gearbox setup,QUALITY_1,QUALITY_INSPECT,1,480,32,329.6,8.0,shiftable,False,160,False
+BATCH_WED,WED-036,gearbox heavy,QUALITY_1,QUALITY_INSPECT,1,600,40,3708.0,8.0,shiftable,False,191,False
+BATCH_WED,WED-037,gearbox follow,QUALITY_1,QUALITY_INSPECT,1,720,48,988.8,8.0,shiftable,False,191,False
+BATCH_WED,WED-038,ice bank trim,CHILLER_1,CHILLER_1,1,480,32,329.6,8.0,interruptible,False,191,False
+BATCH_WED,WED-039,ice bank heavy,CHILLER_1,CHILLER_1,1,600,40,8034.0,10,interruptible,False,191,False
+BATCH_WED,WED-040,ice bank hold,CHILLER_1,CHILLER_1,1,720,48,1112.4,8.0,interruptible,False,191,False
+BATCH_WED,WED-041,compressed air trim,COMP_1,COMP_1,1,480,32,329.6,8.0,interruptible,False,191,False
+BATCH_WED,WED-042,compressed air heavy,COMP_1,COMP_1,1,600,40,8034.0,10,interruptible,False,191,False
+BATCH_WED,WED-043,compressed air hold,COMP_1,COMP_1,1,720,48,1112.4,8.0,interruptible,False,191,False

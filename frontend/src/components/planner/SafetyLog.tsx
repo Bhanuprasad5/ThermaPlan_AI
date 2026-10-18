@@ -31,7 +31,7 @@ export const SafetyLog: React.FC = () => {
       channel: 'Telugu Voice (Tablet)',
       geminiClass: 'Add 10m rest (Unsure: 0)',
       criticResult: 'Passed (ISO 7243 Sec 6.2)',
-      decision: 'Approved by Ravi (Planner)',
+      decision: 'Approved by Manager',
       planHash: '7f9a2d',
     },
     {
@@ -79,7 +79,7 @@ export const SafetyLog: React.FC = () => {
       channel: 'Morning Setup Wizard',
       geminiClass: 'Rule Extraction (5 Constraints)',
       criticResult: 'Passed (Schema & ISO Range)',
-      decision: 'Approved by Ravi',
+      decision: 'Approved by Manager',
       planHash: '7f9a2b',
     },
   ];

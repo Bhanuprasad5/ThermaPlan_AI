@@ -71,7 +71,7 @@ export const SosBand: React.FC = () => {
 
         {/* Acknowledge Button */}
         <button
-          onClick={() => acknowledgeSos('Ravi on Desktop')}
+          onClick={() => acknowledgeSos('Manager on Desktop')}
           className="h-9 px-4 rounded-md bg-white hover:bg-slate-100 text-[#B42318] font-bold text-xs shadow-sm transition-colors cursor-pointer"
         >
           Acknowledge & Assign Relief

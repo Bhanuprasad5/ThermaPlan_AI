@@ -30,6 +30,8 @@ from app.core_math.carbon_tariff_calc import (
     CEA_GRID_EMISSION_FACTOR_TCO2_PER_KWH,
     compute_honest_carbon_and_savings,
     get_tgspdcl_tod_rate,
+    hour_from_slot,
+    operational_day,
 )
 from app.core_math.plan_insights import build_plan_views, build_summary
 from app.core_math.wbgt_calculator import (
@@ -47,7 +49,7 @@ from app.models.schedule import (
 
 TOTAL_SLOTS = 192  # Default 48h @ 15 min
 SOLVER_SEED = 42
-DETERMINISTIC_TIME_LIMIT = 20.0
+DETERMINISTIC_TIME_LIMIT = 30.0
 WALL_CLOCK_GUARD_SEC = 90.0
 RESTART_CAP_ABOVE_BASELINE = 2
 # Paise per required slot left unscheduled; dominates every tariff term so output comes first.
@@ -101,11 +103,20 @@ class TeevraCPSATScheduler:
         self._precompute_thermal_matrix()
 
     def _get_slot_time_info(self, t: int) -> dict[str, int]:
-        total_mins = t * self.slot_duration_minutes
-        h = (total_mins // 60) % 24
-        m = total_mins % 60
-        day = (total_mins // (24 * 60)) + 1
-        return {"hour": h, "minute": m, "day": day, "total_mins": total_mins}
+        """Slot 0 is 08:00. Hour = (8 + slot // (60/slot_minutes)) % 24."""
+        elapsed = t * self.slot_duration_minutes
+        return {
+            "hour": hour_from_slot(t, self.slot_duration_minutes),
+            "minute": elapsed % 60,
+            "day": operational_day(t, self.slot_duration_minutes),
+            "total_mins": elapsed,
+        }
+
+    def _slot_for_clock(self, day: int, hour: int) -> int:
+        """First slot at a clock hour on an operational day (day 1 starts at 08:00)."""
+        slots_per_day = (24 * 60) // self.slot_duration_minutes
+        offset_min = ((hour - 8) % 24) * 60
+        return (day - 1) * slots_per_day + offset_min // self.slot_duration_minutes
 
     def _duration_slots(self, job: PlantOrder) -> int:
         return max(1, math.ceil(job.duration_mins / self.slot_duration_minutes))
@@ -178,7 +189,7 @@ class TeevraCPSATScheduler:
             if roster.work_class < 2:
                 continue
             for day in range(1, total_days + 1):
-                b_start = int(((day - 1) * 24 + 13) * 60 / self.slot_duration_minutes)
+                b_start = self._slot_for_clock(day, 13)
                 if b_start >= self.total_slots:
                     continue
                 b_end = min(self.total_slots, b_start + buf_slots)
@@ -607,11 +618,21 @@ def solve_dual_schedules(
             uncapped.restart_cap_relaxed = True
             optimized = uncapped
 
+    def _active_kwh(plan: SchedulePlanResponse) -> list[tuple[int, float]]:
+        return [
+            (s.slot_index, s.active_kwh)
+            for s in plan.schedule_slots
+            if s.is_active and not s.is_heat_buffer
+        ]
+
     carbon = compute_honest_carbon_and_savings(
         baseline_kwh=baseline.kpi.total_kwh,
         optimized_kwh=optimized.kpi.total_kwh,
         baseline_cost_inr=baseline.kpi.total_cost_inr,
         optimized_cost_inr=optimized.kpi.total_cost_inr,
+        baseline_slot_kwh=_active_kwh(baseline),
+        optimized_slot_kwh=_active_kwh(optimized),
+        slot_minutes=slot_duration_minutes,
     )
 
     optimized.baseline_kpi = baseline.kpi
@@ -627,5 +648,9 @@ def solve_dual_schedules(
 
     build_plan_views(scheduler, baseline, optimized)
     optimized.summary = build_summary(optimized)
+
+    from app.core_math.crew_assignment import attach_crew
+
+    attach_crew(optimized, orders, weather_slots, slot_duration_minutes)
 
     return baseline, optimized

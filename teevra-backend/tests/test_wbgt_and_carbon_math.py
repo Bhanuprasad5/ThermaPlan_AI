@@ -9,6 +9,9 @@ Unit tests for deterministic mathematical formulas:
 from app.core_math.carbon_tariff_calc import (
     compute_honest_carbon_and_savings,
     get_tgspdcl_tod_rate,
+    get_tod_rate_for_slot,
+    grid_intensity_tco2_per_mwh,
+    hour_from_slot,
 )
 from app.core_math.wbgt_calculator import (
     calculate_stull_natural_wet_bulb,
@@ -59,6 +62,19 @@ def test_tgspdcl_tod_tariffs():
     assert normal_rate["rate_inr"] == 7.50
 
 
+def test_slot_clock_starts_at_0800():
+    assert hour_from_slot(0, 15) == 8
+    assert hour_from_slot(4, 15) == 9
+    assert hour_from_slot(8, 15) == 10
+    assert get_tod_rate_for_slot(0)["rate_inr"] == 7.50
+    assert get_tod_rate_for_slot(8)["is_solar"] is True
+    assert get_tod_rate_for_slot(40)["is_peak"] is True
+    assert grid_intensity_tco2_per_mwh(12) == 0.42
+    assert grid_intensity_tco2_per_mwh(19) == 0.82
+    assert grid_intensity_tco2_per_mwh(23) == 0.72
+    assert grid_intensity_tco2_per_mwh(8) == 0.68
+
+
 def test_honest_carbon_rule():
     # When jobs are merely time-shifted without net energy reduction (delta_kwh = 0)
     res = compute_honest_carbon_and_savings(
@@ -69,9 +85,11 @@ def test_honest_carbon_rule():
     )
     assert res["cost_savings_inr"] == 3000.0
     assert res["co2_saved_tco2"] == 0.0, (
-        "Zero kWh reduction must strictly yield 0.0 tCO2 savings"
+        "Zero kWh reduction must strictly yield 0.0 tCO2 savings without an hourly profile"
     )
-    assert "Time-shifting saves rupees, not CO2" in res["honest_co2_banner"]
+    assert "CEA v22" in res["honest_co2_banner"]
+    assert "0.675" in res["honest_co2_banner"]
+    assert "no CO2 saving" in res["honest_co2_banner"]
 
     # When net kWh is genuinely reduced
     res_real = compute_honest_carbon_and_savings(
@@ -82,4 +100,5 @@ def test_honest_carbon_rule():
     )
     assert res_real["delta_kwh"] == 200.0
     assert res_real["co2_saved_tco2"] > 0.0
-    assert "Real energy reduction" in res_real["honest_co2_banner"]
+    assert "kWh less" in res_real["honest_co2_banner"]
+    assert "CEA v22" in res_real["honest_co2_banner"]

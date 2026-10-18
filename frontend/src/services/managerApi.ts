@@ -24,15 +24,21 @@ export async function parseRules(
   const { data } = await apiClient.post<ExtractedConstraintJSON>(
     '/manager/parse-rules',
     form,
-    { headers: { 'Content-Type': 'multipart/form-data' } }
+    {
+      timeout: 60000,
+      headers: { 'Content-Type': undefined },
+    }
   );
   return data;
 }
 
+const SOLVE_TIMEOUT_MS = 240000;
+
 export async function approveAndSolve(constraints?: any): Promise<SchedulePlanResponse> {
   const { data } = await apiClient.post<SchedulePlanResponse>(
     '/manager/approve-and-solve',
-    constraints || {}
+    constraints || {},
+    { timeout: SOLVE_TIMEOUT_MS }
   );
   return data;
 }
@@ -44,15 +50,19 @@ export async function solve48h(
   dayId?: string,
   datasetLabel?: string
 ): Promise<SchedulePlanResponse> {
-  const { data } = await apiClient.post<SchedulePlanResponse>('/manager/solve-48h', {
-    horizon_hours: horizonHours,
-    slot_duration_minutes: slotDurationMinutes,
-    enforce_heat_safety: true,
-    enforce_tariff_optimization: true,
-    orders_csv: ordersCsv || undefined,
-    day_id: dayId || undefined,
-    dataset_label: datasetLabel || undefined,
-  });
+  const { data } = await apiClient.post<SchedulePlanResponse>(
+    '/manager/solve-48h',
+    {
+      horizon_hours: horizonHours,
+      slot_duration_minutes: slotDurationMinutes,
+      enforce_heat_safety: true,
+      enforce_tariff_optimization: true,
+      orders_csv: ordersCsv || undefined,
+      day_id: dayId || undefined,
+      dataset_label: datasetLabel || undefined,
+    },
+    { timeout: SOLVE_TIMEOUT_MS }
+  );
   return data;
 }
 

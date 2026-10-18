@@ -16,6 +16,17 @@ import {
 } from 'lucide-react';
 import { usePlant } from '../../context/PlantContext';
 import { Proposal } from '../../types';
+
+function inr(n: number) {
+  return `₹${Math.round(n).toLocaleString('en-IN')}`;
+}
+
+function shortClause(banner: string) {
+  const trimmed = banner.trim();
+  const stop = trimmed.indexOf('. ');
+  return stop === -1 ? trimmed : trimmed.slice(0, stop + 1);
+}
+
 export const ContextPanel: React.FC = () => {
   const {
     activeProposal,
@@ -44,7 +55,47 @@ export const ContextPanel: React.FC = () => {
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {solveError && <p className="text-xs text-[#B42318] bg-red-50 border border-red-200 rounded p-2">{solveError}</p>}
         {activePlan && (
-          <p className="text-xs text-[#1B1F24] leading-relaxed">{activePlan.gemini_explanation_text || activePlan.summary}</p>
+          <>
+            <p className="text-xs text-[#1B1F24] leading-relaxed">{activePlan.gemini_explanation_text || activePlan.summary}</p>
+            <ul className="text-xs text-[#1B1F24] space-y-1 list-disc pl-4">
+              {activePlan.baseline_kpi && (
+                <li>
+                  <span className="text-[#5B636E]">Money saved vs baseline</span>{' '}
+                  <span className="font-semibold tabular-nums">{inr(activePlan.baseline_kpi.total_cost_inr - activePlan.kpi.total_cost_inr)}</span>
+                </li>
+              )}
+              <li>
+                <span className="text-[#5B636E]">Power bill</span>{' '}
+                <span className="font-semibold tabular-nums">{inr(activePlan.kpi.total_cost_inr)}</span>
+              </li>
+              <li>
+                <span className="text-[#5B636E]">Output</span>{' '}
+                <span className="font-semibold tabular-nums">{activePlan.kpi.output_percentage}%</span>
+                <span className="text-[#5B636E]"> · {activePlan.kpi.scheduled_jobs} of {activePlan.kpi.total_jobs} jobs</span>
+              </li>
+              <li>
+                <span className="text-[#5B636E]">CO2 saved</span>{' '}
+                <span className="font-semibold tabular-nums">{activePlan.kpi.co2_saved_tco2} tCO2</span>
+                {activePlan.kpi.honest_co2_banner ? (
+                  <span className="text-[#5B636E]"> · {shortClause(activePlan.kpi.honest_co2_banner)}</span>
+                ) : null}
+              </li>
+              {activePlan.crew_summary && (
+                <>
+                  <li>
+                    <span className="text-[#5B636E]">Workers</span>{' '}
+                    <span className="tabular-nums">{activePlan.crew_summary.workers_assigned} of {activePlan.crew_summary.workers_on_roster}</span>
+                    <span className="text-[#5B636E]">, about {activePlan.crew_summary.avg_hours} h each</span>
+                  </li>
+                  <li>
+                    <span className="text-[#5B636E]">Machines</span>{' '}
+                    <span className="tabular-nums">{activePlan.crew_summary.machines_used} of {activePlan.crew_summary.machines_total}</span>
+                    <span className="text-[#5B636E]">, {activePlan.crew_summary.machine_hours} machine-hours</span>
+                  </li>
+                </>
+              )}
+            </ul>
+          </>
         )}
           <>
             {activeProposal ? (

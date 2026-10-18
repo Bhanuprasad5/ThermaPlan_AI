@@ -1,9 +1,44 @@
 upload_batch_id,order_id,job_name,machine_id,station_id,routing_seq,duration_mins,duration_slots,kwh_per_op,restart_kwh,load_tag,splittable,due_slot,is_critical_melt
-BATCH_MON,MON-01,Ladle melt A,FURNACE_1,FURNACE_BAY,1,360,24,360,12,fixed,False,191,True
-BATCH_MON,MON-02,Ladle melt B,FURNACE_1,FURNACE_BAY,1,360,24,360,12,fixed,False,191,True
-BATCH_MON,MON-03,Housing mill,CNC_1,CNC_BAY,1,120,8,80,4,shiftable,False,191,False
-BATCH_MON,MON-04,Shaft turn,CNC_2,CNC_BAY,1,120,8,80,4,shiftable,False,191,False
-BATCH_MON,MON-05,Flange mill,CNC_3,CNC_BAY,1,120,8,80,4,shiftable,False,191,False
-BATCH_MON,MON-06,Paint cure,OVEN_1,OVEN_1,1,120,8,80,4,shiftable,False,191,False
-BATCH_MON,MON-07,Ice bank charge,CHILLER_1,CHILLER_1,1,120,8,80,20,interruptible,True,191,False
-BATCH_MON,MON-08,Compressed air,COMP_1,COMP_1,1,120,8,80,4,shiftable,False,191,False
+BATCH_MON,MON-001,castings melt night,FURNACE_1,FURNACE_1,1,600,40,8500.0,50,fixed,False,191,True
+BATCH_MON,MON-002,castings melt late,FURNACE_1,FURNACE_1,1,600,40,8500.0,50,fixed,False,191,True
+BATCH_MON,MON-003,castings melt night,FURNACE_2,FURNACE_2,1,600,40,8500.0,50,fixed,False,191,True
+BATCH_MON,MON-004,castings melt late,FURNACE_2,FURNACE_2,1,600,40,8500.0,50,fixed,False,191,True
+BATCH_MON,MON-005,castings melt night,FURNACE_3,FURNACE_3,1,600,40,8500.0,50,fixed,False,191,True
+BATCH_MON,MON-006,castings melt late,FURNACE_3,FURNACE_3,1,600,40,8500.0,50,fixed,False,191,True
+BATCH_MON,MON-007,castings charge night,CHARGE_1,CHARGING_BAY,1,600,40,1600.0,8.0,shiftable,False,191,False
+BATCH_MON,MON-008,castings charge late,CHARGE_1,CHARGING_BAY,1,600,40,1600.0,8.0,shiftable,False,191,False
+BATCH_MON,MON-009,castings setup,CNC_1,CNC_1,1,480,32,320.0,8.0,shiftable,False,191,False
+BATCH_MON,MON-010,castings heavy,CNC_1,CNC_1,1,600,40,6200.0,8.0,shiftable,False,191,False
+BATCH_MON,MON-011,castings follow,CNC_1,CNC_1,1,720,48,960.0,8.0,shiftable,False,191,False
+BATCH_MON,MON-012,castings setup,CNC_2,CNC_2,1,480,32,320.0,8.0,shiftable,False,191,False
+BATCH_MON,MON-013,castings heavy,CNC_2,CNC_2,1,600,40,6200.0,8.0,shiftable,False,191,False
+BATCH_MON,MON-014,castings follow,CNC_2,CNC_2,1,720,48,960.0,8.0,shiftable,False,191,False
+BATCH_MON,MON-015,castings setup,CNC_3,CNC_3,1,480,32,320.0,8.0,shiftable,False,191,False
+BATCH_MON,MON-016,castings heavy,CNC_3,CNC_3,1,600,40,6200.0,8.0,shiftable,False,191,False
+BATCH_MON,MON-017,castings follow,CNC_3,CNC_3,1,720,48,960.0,8.0,shiftable,False,191,False
+BATCH_MON,MON-018,castings setup,CNC_4,CNC_4,1,480,32,320.0,8.0,shiftable,False,191,False
+BATCH_MON,MON-019,castings heavy,CNC_4,CNC_4,1,600,40,6200.0,8.0,shiftable,False,191,False
+BATCH_MON,MON-020,castings follow,CNC_4,CNC_4,1,720,48,960.0,8.0,shiftable,False,191,False
+BATCH_MON,MON-021,castings setup,CNC_5,CNC_5,1,480,32,320.0,8.0,shiftable,False,191,False
+BATCH_MON,MON-022,castings heavy,CNC_5,CNC_5,1,600,40,6200.0,8.0,shiftable,False,191,False
+BATCH_MON,MON-023,castings follow,CNC_5,CNC_5,1,720,48,960.0,8.0,shiftable,False,191,False
+BATCH_MON,MON-024,castings setup,OVEN_1,OVEN_1,1,480,32,320.0,8.0,shiftable,False,191,False
+BATCH_MON,MON-025,castings heavy,OVEN_1,OVEN_1,1,600,40,4800.0,8.0,shiftable,False,191,False
+BATCH_MON,MON-026,castings follow,OVEN_1,OVEN_1,1,720,48,960.0,8.0,shiftable,False,191,False
+BATCH_MON,MON-027,castings setup,OVEN_2,OVEN_2,1,480,32,320.0,8.0,shiftable,False,191,False
+BATCH_MON,MON-028,castings heavy,OVEN_2,OVEN_2,1,600,40,4800.0,8.0,shiftable,False,191,False
+BATCH_MON,MON-029,castings follow,OVEN_2,OVEN_2,1,720,48,960.0,8.0,shiftable,False,191,False
+BATCH_MON,MON-030,castings quench night,QUENCH_1,HEAT_TREAT_1,1,600,40,1600.0,8.0,shiftable,False,191,False
+BATCH_MON,MON-031,castings quench late,QUENCH_1,HEAT_TREAT_1,1,600,40,1600.0,8.0,shiftable,False,191,False
+BATCH_MON,MON-032,castings setup,ASSEMBLY_1,ASSEMBLY_1,1,480,32,320.0,8.0,shiftable,False,191,False
+BATCH_MON,MON-033,castings heavy,ASSEMBLY_1,ASSEMBLY_1,1,600,40,3600.0,8.0,shiftable,False,191,False
+BATCH_MON,MON-034,castings follow,ASSEMBLY_1,ASSEMBLY_1,1,720,48,960.0,8.0,shiftable,False,191,False
+BATCH_MON,MON-035,castings setup,QUALITY_1,QUALITY_INSPECT,1,480,32,320.0,8.0,shiftable,False,160,False
+BATCH_MON,MON-036,castings heavy,QUALITY_1,QUALITY_INSPECT,1,600,40,3600.0,8.0,shiftable,False,191,False
+BATCH_MON,MON-037,castings follow,QUALITY_1,QUALITY_INSPECT,1,720,48,960.0,8.0,shiftable,False,191,False
+BATCH_MON,MON-038,ice bank trim,CHILLER_1,CHILLER_1,1,480,32,320.0,8.0,interruptible,False,191,False
+BATCH_MON,MON-039,ice bank heavy,CHILLER_1,CHILLER_1,1,600,40,7800.0,10,interruptible,False,191,False
+BATCH_MON,MON-040,ice bank hold,CHILLER_1,CHILLER_1,1,720,48,1080.0,8.0,interruptible,False,191,False
+BATCH_MON,MON-041,compressed air trim,COMP_1,COMP_1,1,480,32,320.0,8.0,interruptible,False,191,False
+BATCH_MON,MON-042,compressed air heavy,COMP_1,COMP_1,1,600,40,7800.0,10,interruptible,False,191,False
+BATCH_MON,MON-043,compressed air hold,COMP_1,COMP_1,1,720,48,1080.0,8.0,interruptible,False,191,False

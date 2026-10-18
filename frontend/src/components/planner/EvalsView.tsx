@@ -1,8 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { ArrowLeft, ShieldCheck } from 'lucide-react';
 import { usePlant } from '../../context/PlantContext';
-import { getEvalsSummary } from '../../services/managerApi';
-import { EvalsSummary } from '../../types/backend';
 
 const CHECKS = [
   ['Heat rule, checked again', 'A second pass reads every scheduled slot and confirms the crew limit was not crossed. It does not trust the solver’s own count.'],
@@ -17,26 +15,24 @@ function money(n: number) {
   return `₹${Math.round(n).toLocaleString('en-IN')}`;
 }
 
+function hours(n: number) {
+  return Number.isInteger(n) ? String(n) : n.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+}
+
+function kwh(n: number) {
+  return n.toLocaleString('en-IN');
+}
+
 export const EvalsView: React.FC = () => {
-  const { goBack } = usePlant();
-  const [summary, setSummary] = useState<EvalsSummary | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { goBack, activePlan } = usePlant();
 
-  useEffect(() => {
-    let live = true;
-    getEvalsSummary()
-      .then((s) => live && setSummary(s))
-      .catch((e: unknown) => live && setError(e instanceof Error ? e.message : 'Could not load run history'));
-    return () => { live = false; };
-  }, []);
-
-  const rows: Array<[string, string, (s: EvalsSummary) => string, (s: EvalsSummary) => string]> = [
-    ['Power bill', 'Lower is better', (s) => money(s.baseline.cost_inr), (s) => money(s.optimized.cost_inr)],
-    ['Energy', 'Same means the saving is timing', (s) => `${s.baseline.kwh.toLocaleString()} kWh`, (s) => `${s.optimized.kwh.toLocaleString()} kWh`],
-    ['Unsafe-heat slots', 'Work placed above the crew limit', (s) => s.baseline.heat_breach_slots.toFixed(1), (s) => s.optimized.heat_breach_slots.toFixed(1)],
-    ['Restarts', 'Extra machine starts', (s) => s.baseline.restarts.toFixed(1), (s) => s.optimized.restarts.toFixed(1)],
-    ['Output', 'Jobs placed by their due time', (s) => `${s.baseline.output_pct}%`, (s) => `${s.optimized.output_pct}%`],
-  ];
+  const crew = activePlan?.crew_summary;
+  const peopleLine = crew
+    ? `${crew.workers_assigned} of ${crew.workers_on_roster} workers assigned, about ${hours(crew.avg_hours)} h each.`
+    : 'People hours appear after the next solve.';
+  const machinesLine = crew
+    ? `${crew.machines_used} of ${crew.machines_total} machines scheduled, ${hours(crew.machine_hours)} machine-hours.`
+    : 'Machine hours appear after the next solve.';
 
   return (
     <div className="min-h-screen bg-[#F4F5F7] text-[#1B1F24] font-sans">
@@ -56,67 +52,57 @@ export const EvalsView: React.FC = () => {
 
       <main className="max-w-4xl mx-auto px-6 py-8 space-y-6">
         <section className="bg-white rounded-xl border border-[#D9DDE2] p-6 space-y-4">
-          <div className="flex items-baseline justify-between gap-3">
-            <h2 className="font-bold">1. Baseline vs our plan</h2>
-            <span className="text-xs text-[#5B636E]">
-              {summary ? `Average of ${summary.runs} run${summary.runs === 1 ? '' : 's'}` : error ? 'Unavailable' : 'Loading…'}
-            </span>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="font-bold flex items-center gap-2">
+              1. Baseline vs our plan
+              <span className="text-[11px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-[#E8F2FC] text-[#0F5FA8] border border-[#0F5FA8]/30">
+                Mockup
+              </span>
+            </h2>
+            <span className="text-xs text-[#5B636E]">Illustrative day</span>
           </div>
-          <p className="text-xs text-[#5B636E]">
-            The baseline starts every job as early as it can, with no heat rule. Our plan keeps crews inside the heat limit and moves work into cheaper power. Both are solved on the same orders.
+
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-[11px] uppercase tracking-wide text-[#5B636E] border-b border-[#D9DDE2]">
+                <th className="py-2 font-semibold">Measure</th>
+                <th className="py-2 font-semibold">Baseline</th>
+                <th className="py-2 font-semibold">Our plan</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border-b border-[#D9DDE2]/70">
+                <td className="py-2 font-semibold">Power bill</td>
+                <td className="py-2 tabular-nums">{money(1029000)}</td>
+                <td className="py-2 tabular-nums font-bold">{money(987000)}</td>
+              </tr>
+              <tr className="border-b border-[#D9DDE2]/70">
+                <td className="py-2 font-semibold">Plant output</td>
+                <td className="py-2 tabular-nums">100%</td>
+                <td className="py-2 tabular-nums font-bold">100%</td>
+              </tr>
+              <tr className="border-b border-[#D9DDE2]/70">
+                <td className="py-2 font-semibold">Heat</td>
+                <td className="py-2">100 workers over the crew limit</td>
+                <td className="py-2 tabular-nums font-bold">0</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p className="text-sm">
+            Saved {money(42000)} and {kwh(4800)} kWh (baseline {kwh(139000)} kWh, our plan {kwh(134200)} kWh), avoiding 3.24 t CO2 at 0.675 tCO2 per MWh, with 43 of 43 jobs placed on time and all 100 workers inside the limit.
           </p>
 
-          {summary && summary.runs > 0 ? (
-            <>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-4">
-                  <div className="text-xs text-[#1E7A46] font-semibold">Average saving per run</div>
-                  <div className="text-3xl font-black tabular-nums">{money(summary.avg_saving_inr)}</div>
-                  <div className="text-xs text-[#5B636E]">{summary.avg_saving_pct}% of the baseline bill</div>
-                </div>
-                <div className="rounded-lg bg-[#F4F5F7] border border-[#D9DDE2] p-4">
-                  <div className="text-xs text-[#5B636E] font-semibold">Saved across these runs</div>
-                  <div className="text-3xl font-black tabular-nums">{money(summary.total_saving_inr)}</div>
-                  <div className="text-xs text-[#5B636E]">{summary.runs} morning plans</div>
-                </div>
-              </div>
-
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-[11px] uppercase tracking-wide text-[#5B636E] border-b border-[#D9DDE2]">
-                    <th className="py-2 font-semibold">Measure</th>
-                    <th className="py-2 font-semibold">Baseline</th>
-                    <th className="py-2 font-semibold">Our plan</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map(([name, hint, base, opt]) => (
-                    <tr key={name} className="border-b border-[#D9DDE2]/70">
-                      <td className="py-2">
-                        <div className="font-semibold">{name}</div>
-                        <div className="text-[11px] text-[#5B636E]">{hint}</div>
-                      </td>
-                      <td className="py-2 tabular-nums">{base(summary)}</td>
-                      <td className="py-2 tabular-nums font-bold">{opt(summary)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              {summary.datasets.length > 0 && (
-                <div className="text-xs text-[#5B636E] space-y-1">
-                  {summary.datasets.map((d) => (
-                    <div key={d.dataset} className="flex justify-between gap-3 border-t border-[#D9DDE2]/60 pt-1">
-                      <span>{d.dataset} · {d.runs} run{d.runs === 1 ? '' : 's'}{d.same_plan_every_run ? ' · same plan each time' : ''}</span>
-                      <span className="tabular-nums">{money(d.baseline_cost_inr)} → {money(d.optimized_cost_inr)}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </>
-          ) : (
-            <p className="text-sm text-[#5B636E]">{error || 'No runs yet. Solve a day from the planner and come back.'}</p>
-          )}
+          <div className="text-sm space-y-1 border-t border-[#D9DDE2] pt-3">
+            <p>
+              <span className="font-semibold">People. </span>
+              <span className={crew ? '' : 'text-[#5B636E]'}>{peopleLine}</span>
+            </p>
+            <p>
+              <span className="font-semibold">Machines. </span>
+              <span className={crew ? '' : 'text-[#5B636E]'}>{machinesLine}</span>
+            </p>
+          </div>
         </section>
 
         <section className="bg-white rounded-xl border border-[#D9DDE2] p-6 space-y-4">

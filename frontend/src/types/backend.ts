@@ -111,6 +111,32 @@ export interface ExplanationTrace {
   error?: string | null;
 }
 
+export interface CrewMember {
+  name: string;
+  role: string;
+  heat_class: number;
+  tag: string;
+}
+
+export interface JobCrew {
+  machine_id: string;
+  order_id: string;
+  job_name: string;
+  load_tag: 'fixed' | 'shiftable' | 'interruptible';
+  expected_wbgt_c: number;
+  supervisor: string;
+  members: CrewMember[];
+}
+
+export interface CrewSummary {
+  workers_on_roster: number;
+  workers_assigned: number;
+  avg_hours: number;
+  machines_used: number;
+  machines_total: number;
+  machine_hours: number;
+}
+
 export interface SchedulePlanResponse {
   plan_id: string;
   plan_hash: string;
@@ -142,6 +168,8 @@ export interface SchedulePlanResponse {
   heat_windows: HeatWindow[];
   tariff_bands: TariffBand[];
   job_moves: JobMove[];
+  job_crews?: JobCrew[];
+  crew_summary?: CrewSummary | null;
 }
 
 export interface EvalsKpiRow {
@@ -150,6 +178,7 @@ export interface EvalsKpiRow {
   heat_breach_slots: number;
   restarts: number;
   output_pct: number;
+  co2_saved_tco2?: number;
 }
 
 export interface EvalsSummary {
@@ -182,8 +211,13 @@ export interface ExtractedConstraintJSON {
   constraints: Array<Record<string, unknown>>;
   tariff_periods: Array<Record<string, unknown>>;
   frozen_window_hours: number;
-  gemini_model: string;
+  gemini_model?: string | null;
   extraction_timestamp: string;
+  source?: string;
+  label?: string;
+  latency_ms?: number;
+  is_fallback?: boolean;
+  error?: string;
 }
 
 export interface EmergencySOSResponse {

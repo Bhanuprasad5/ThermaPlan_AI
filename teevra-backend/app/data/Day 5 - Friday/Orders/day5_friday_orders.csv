@@ -1,9 +1,44 @@
 upload_batch_id,order_id,job_name,machine_id,station_id,routing_seq,duration_mins,duration_slots,kwh_per_op,restart_kwh,load_tag,splittable,due_slot,is_critical_melt
-BATCH_FRI,FRI-01,Valve body melt (rush),FURNACE_1,FURNACE_BAY,1,360,24,360,12,fixed,False,87,True
-BATCH_FRI,FRI-02,Valve body melt,FURNACE_1,FURNACE_BAY,1,360,24,360,12,fixed,False,191,True
-BATCH_FRI,FRI-03,Seat machining (rush),CNC_1,CNC_BAY,1,120,8,80,4,shiftable,False,47,False
-BATCH_FRI,FRI-04,Stem machining (rush),CNC_2,CNC_BAY,1,120,8,80,4,shiftable,False,47,False
-BATCH_FRI,FRI-05,Bonnet machining,CNC_3,CNC_BAY,1,120,8,80,4,shiftable,False,191,False
-BATCH_FRI,FRI-06,Paint cure,OVEN_1,OVEN_1,1,120,8,80,4,shiftable,False,191,False
-BATCH_FRI,FRI-07,Ice bank charge,CHILLER_1,CHILLER_1,1,240,16,120,15,interruptible,True,191,False
-BATCH_FRI,FRI-08,Compressed air,COMP_1,COMP_1,1,180,12,90,4,shiftable,False,191,False
+BATCH_FRI,FRI-001,valve blocks melt night,FURNACE_1,FURNACE_1,1,600,40,8670.0,50,fixed,False,191,True
+BATCH_FRI,FRI-002,valve blocks melt late,FURNACE_1,FURNACE_1,1,600,40,8670.0,50,fixed,False,191,True
+BATCH_FRI,FRI-003,valve blocks melt night,FURNACE_2,FURNACE_2,1,600,40,8670.0,50,fixed,False,191,True
+BATCH_FRI,FRI-004,valve blocks melt late,FURNACE_2,FURNACE_2,1,600,40,8670.0,50,fixed,False,191,True
+BATCH_FRI,FRI-005,valve blocks melt night,FURNACE_3,FURNACE_3,1,600,40,8670.0,50,fixed,False,191,True
+BATCH_FRI,FRI-006,valve blocks melt late,FURNACE_3,FURNACE_3,1,600,40,8670.0,50,fixed,False,191,True
+BATCH_FRI,FRI-007,valve blocks charge night,CHARGE_1,CHARGING_BAY,1,600,40,1632.0,8.0,shiftable,False,191,False
+BATCH_FRI,FRI-008,valve blocks charge late,CHARGE_1,CHARGING_BAY,1,600,40,1632.0,8.0,shiftable,False,191,False
+BATCH_FRI,FRI-009,valve blocks setup,CNC_1,CNC_1,1,480,32,326.4,8.0,shiftable,False,191,False
+BATCH_FRI,FRI-010,valve blocks heavy,CNC_1,CNC_1,1,600,40,6324.0,8.0,shiftable,False,191,False
+BATCH_FRI,FRI-011,valve blocks follow,CNC_1,CNC_1,1,720,48,979.2,8.0,shiftable,False,191,False
+BATCH_FRI,FRI-012,valve blocks setup,CNC_2,CNC_2,1,480,32,326.4,8.0,shiftable,False,191,False
+BATCH_FRI,FRI-013,valve blocks heavy,CNC_2,CNC_2,1,600,40,6324.0,8.0,shiftable,False,191,False
+BATCH_FRI,FRI-014,valve blocks follow,CNC_2,CNC_2,1,720,48,979.2,8.0,shiftable,False,191,False
+BATCH_FRI,FRI-015,valve blocks setup,CNC_3,CNC_3,1,480,32,326.4,8.0,shiftable,False,191,False
+BATCH_FRI,FRI-016,valve blocks heavy,CNC_3,CNC_3,1,600,40,6324.0,8.0,shiftable,False,191,False
+BATCH_FRI,FRI-017,valve blocks follow,CNC_3,CNC_3,1,720,48,979.2,8.0,shiftable,False,191,False
+BATCH_FRI,FRI-018,valve blocks setup,CNC_4,CNC_4,1,480,32,326.4,8.0,shiftable,False,191,False
+BATCH_FRI,FRI-019,valve blocks heavy,CNC_4,CNC_4,1,600,40,6324.0,8.0,shiftable,False,191,False
+BATCH_FRI,FRI-020,valve blocks follow,CNC_4,CNC_4,1,720,48,979.2,8.0,shiftable,False,191,False
+BATCH_FRI,FRI-021,valve blocks setup,CNC_5,CNC_5,1,480,32,326.4,8.0,shiftable,False,191,False
+BATCH_FRI,FRI-022,valve blocks heavy,CNC_5,CNC_5,1,600,40,6324.0,8.0,shiftable,False,191,False
+BATCH_FRI,FRI-023,valve blocks follow,CNC_5,CNC_5,1,720,48,979.2,8.0,shiftable,False,191,False
+BATCH_FRI,FRI-024,valve blocks setup,OVEN_1,OVEN_1,1,480,32,326.4,8.0,shiftable,False,191,False
+BATCH_FRI,FRI-025,valve blocks heavy,OVEN_1,OVEN_1,1,600,40,4896.0,8.0,shiftable,False,191,False
+BATCH_FRI,FRI-026,valve blocks follow,OVEN_1,OVEN_1,1,720,48,979.2,8.0,shiftable,False,191,False
+BATCH_FRI,FRI-027,valve blocks setup,OVEN_2,OVEN_2,1,480,32,326.4,8.0,shiftable,False,191,False
+BATCH_FRI,FRI-028,valve blocks heavy,OVEN_2,OVEN_2,1,600,40,4896.0,8.0,shiftable,False,191,False
+BATCH_FRI,FRI-029,valve blocks follow,OVEN_2,OVEN_2,1,720,48,979.2,8.0,shiftable,False,191,False
+BATCH_FRI,FRI-030,valve blocks quench night,QUENCH_1,HEAT_TREAT_1,1,600,40,1632.0,8.0,shiftable,False,191,False
+BATCH_FRI,FRI-031,valve blocks quench late,QUENCH_1,HEAT_TREAT_1,1,600,40,1632.0,8.0,shiftable,False,191,False
+BATCH_FRI,FRI-032,valve blocks setup,ASSEMBLY_1,ASSEMBLY_1,1,480,32,326.4,8.0,shiftable,False,191,False
+BATCH_FRI,FRI-033,valve blocks heavy,ASSEMBLY_1,ASSEMBLY_1,1,600,40,3672.0,8.0,shiftable,False,191,False
+BATCH_FRI,FRI-034,valve blocks follow,ASSEMBLY_1,ASSEMBLY_1,1,720,48,979.2,8.0,shiftable,False,191,False
+BATCH_FRI,FRI-035,valve blocks setup,QUALITY_1,QUALITY_INSPECT,1,480,32,326.4,8.0,shiftable,False,160,False
+BATCH_FRI,FRI-036,valve blocks heavy,QUALITY_1,QUALITY_INSPECT,1,600,40,3672.0,8.0,shiftable,False,191,False
+BATCH_FRI,FRI-037,valve blocks follow,QUALITY_1,QUALITY_INSPECT,1,720,48,979.2,8.0,shiftable,False,191,False
+BATCH_FRI,FRI-038,ice bank trim,CHILLER_1,CHILLER_1,1,480,32,326.4,8.0,interruptible,False,191,False
+BATCH_FRI,FRI-039,ice bank heavy,CHILLER_1,CHILLER_1,1,600,40,7956.0,10,interruptible,False,191,False
+BATCH_FRI,FRI-040,ice bank hold,CHILLER_1,CHILLER_1,1,720,48,1101.6,8.0,interruptible,False,191,False
+BATCH_FRI,FRI-041,compressed air trim,COMP_1,COMP_1,1,480,32,326.4,8.0,interruptible,False,191,False
+BATCH_FRI,FRI-042,compressed air heavy,COMP_1,COMP_1,1,600,40,7956.0,10,interruptible,False,191,False
+BATCH_FRI,FRI-043,compressed air hold,COMP_1,COMP_1,1,720,48,1101.6,8.0,interruptible,False,191,False

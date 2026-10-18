@@ -189,6 +189,7 @@ export const MorningSetupModal: React.FC = () => {
 
   useEffect(() => {
     if (!morningSetupOpen) return;
+    setCurrentStep(1);
     listAvailableTemplates()
       .then((res) => setTemplateOptions(res.templates.filter((t) => t.available).map((t) => ({ day_id: t.day_id, label: t.label }))))
       .catch(() => setTemplateOptions([]));
@@ -201,6 +202,7 @@ export const MorningSetupModal: React.FC = () => {
   const [isExtractingRules, setIsExtractingRules] = useState<boolean>(false);
   const [extractedConstraints, setExtractedConstraints] = useState<any[]>([]);
   const [geminiModelUsed, setGeminiModelUsed] = useState<string>('Not called yet');
+  const [rulesError, setRulesError] = useState('');
 
   // Horizon & Slot Resolution Configuration
   const [horizonHours, setHorizonHours] = useState<number>(48);
@@ -297,11 +299,8 @@ export const MorningSetupModal: React.FC = () => {
         setTemplateError('The sample files did not pass the upload check. The problems are listed below.');
         return;
       }
-      await solveMorningPlan(pack.orders_csv, 48, 15, roster.workers, pack.day_id);
-      setCurrentView('planner');
-      setMorningSetupOpen(false);
     } catch {
-      setTemplateError('The sample files or plan could not be loaded. Your selected files remain visible; check the backend and try again.');
+      setTemplateError('The sample files could not be loaded. Your selected files remain visible; check the backend and try again.');
     } finally {
       setTemplatesLoading(false);
     }
@@ -345,25 +344,34 @@ export const MorningSetupModal: React.FC = () => {
 
   const handleExtractRules = async () => {
     setIsExtractingRules(true);
+    setRulesError('');
     try {
       const res = await parseRules(null, null, naturalLanguageRule);
       if (res && res.constraints && res.constraints.length > 0) {
         setExtractedConstraints(
-          res.constraints.map((c: any) => ({
-            ruleId: c.constraint_id || 'CNS-01',
-            targetStation: c.station || 'All Stations',
-            parameter: `WBGT Limit: ${c.wbgt_limit_c}°C (Work Class ${c.work_class})`,
-            isoStandard: c.source || 'ISO 7243:2017 Table A.1',
-            criticPassed: true,
-            frozenWindowHours: c.frozen_window_hours || 2,
+          res.constraints.map((c: Record<string, unknown>) => ({
+            ruleId: String(c.constraint_id || 'CNS-01'),
+            targetStation: String(c.station || 'All Stations'),
+            parameter: String(
+              c.parameter
+              || `WBGT ≤ ${c.wbgt_limit_c}°C (Class ${c.work_class})`
+            ),
+            isoStandard: String(c.source || 'ISO 7243:2017 Table A.1'),
+            criticPassed: c.unsure !== true,
+            frozenWindowHours: Number(c.frozen_window_hours || 2),
           }))
         );
-        const label = (res as { label?: string; source?: string; gemini_model?: string }).label
-          || ((res as { source?: string }).source === 'gemini' ? res.gemini_model : 'Deterministic fallback, no Gemini call');
-        if (label) setGeminiModelUsed(label);
+        const latency = res.latency_ms != null ? ` · ${res.latency_ms} ms` : '';
+        if (res.source === 'gemini' && res.gemini_model) {
+          setGeminiModelUsed(`${res.gemini_model}${latency}`);
+        } else {
+          setGeminiModelUsed(res.label || 'Deterministic fallback, no Gemini call');
+        }
+      } else {
+        setRulesError('Gemini returned no constraints. Check the note and try again.');
       }
     } catch {
-      // Keep cached / default
+      setRulesError('The rules service did not respond. Check the backend, then try again.');
     } finally {
       setIsExtractingRules(false);
     }
@@ -466,9 +474,9 @@ export const MorningSetupModal: React.FC = () => {
               <div className="border border-[#0F5FA8] bg-blue-50/70 rounded-lg p-4 space-y-3">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="font-bold text-[#0F5FA8] uppercase tracking-wider text-xs">Option 1 — Run with sample files</p>
+                    <p className="font-bold text-[#0F5FA8] uppercase tracking-wider text-xs">Option 1 — Load sample files</p>
                     <p className="text-[11px] text-[#1B1F24] mt-1 leading-relaxed">
-                      Choose a day, then load all three sample files: plant orders, worker roster, and electricity tariff. TEEVRA will immediately start the 48-hour solver.
+                      Choose a day, then load all three sample files: plant orders, worker roster, and electricity tariff. After they pass the checks, continue through Gemini rules, slots & weather, then solve.
                     </p>
                   </div>
                   {dataSource === 'template' && (
@@ -495,10 +503,10 @@ export const MorningSetupModal: React.FC = () => {
                   <button
                     type="button"
                     onClick={handleLoadTemplates}
-                    disabled={templatesLoading || isSolvingBackend}
+                    disabled={templatesLoading}
                     className="px-3 py-1.5 rounded-md bg-[#0F5FA8] hover:bg-[#0c4e8a] disabled:bg-slate-300 text-white font-semibold text-xs"
                   >
-                    {templatesLoading || isSolvingBackend ? 'Loading files & solving…' : 'Load all sample files & run plan'}
+                    {templatesLoading ? 'Loading sample files…' : 'Load all sample files'}
                   </button>
                   {tariffFileName && (
                     <span className="text-[11px] text-[#1E7A46] font-semibold">Tariff sheet: {tariffFileName}</span>
@@ -790,7 +798,7 @@ export const MorningSetupModal: React.FC = () => {
               <div className="p-3 bg-blue-50/60 border border-blue-200/60 rounded-lg flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Sparkles size={16} className="text-[#0F5FA8]" />
-                  <span className="font-bold text-[#0F5FA8]">Vertex AI Gemini Function Calling ({geminiModelUsed})</span>
+                  <span className="font-bold text-[#0F5FA8]">Vertex AI Gemini ({geminiModelUsed})</span>
                 </div>
                 <span className="text-[11px] text-[#5B636E]">Strict Pydantic JSON Schema Extraction</span>
               </div>
@@ -817,8 +825,9 @@ export const MorningSetupModal: React.FC = () => {
                       <Sparkles size={13} />
                       <span>{isExtractingRules ? 'Extracting via Gemini...' : 'Parse Rules with Gemini Flash'}</span>
                     </button>
-                    <span className="text-[11px] text-[#5B636E]">Grounded by TGSPDCL & ISO 7243</span>
+                    <span className="text-[11px] text-[#5B636E]">WBGT from ISO 7243 Table A.1</span>
                   </div>
+                  {rulesError && <p className="text-[11px] text-red-700">{rulesError}</p>}
                 </div>
 
                 {/* Structured JSON & Safety Critic View */}
@@ -827,13 +836,20 @@ export const MorningSetupModal: React.FC = () => {
                     Structured Constraints & Safety Critic Gate
                   </label>
                   <div className="border border-[#D9DDE2] rounded-lg p-3 bg-slate-50 space-y-2.5 max-h-56 overflow-y-auto">
+                    {extractedConstraints.length === 0 && (
+                      <p className="text-[11px] text-[#5B636E]">Parse the manager note to extract ISO 7243 limits, frozen window, output, and heat buffers.</p>
+                    )}
                     {extractedConstraints.map((c, idx) => (
                       <div key={idx} className="p-2 bg-white rounded border border-[#D9DDE2] shadow-2xs space-y-1">
                         <div className="flex items-center justify-between font-bold text-[#1B1F24]">
                           <span>{c.targetStation}</span>
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-[#1E7A46] font-bold inline-flex items-center gap-1">
-                            <Check size={10} /> Critic Validated
-                          </span>
+                          {c.criticPassed ? (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-[#1E7A46] font-bold inline-flex items-center gap-1">
+                              <Check size={10} /> ISO Table A.1
+                            </span>
+                          ) : (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 font-bold">Check</span>
+                          )}
                         </div>
                         <p className="text-[11px] text-[#5B636E]">{c.parameter}</p>
                         <p className="text-[10px] text-blue-700 font-mono">{c.isoStandard}</p>

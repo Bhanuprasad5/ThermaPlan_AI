@@ -5,6 +5,7 @@ Every value here is read from the solver output; nothing is estimated.
 """
 from typing import TYPE_CHECKING
 
+from app.core_math.carbon_tariff_calc import hour_from_slot, operational_day
 from app.core_math.wbgt_calculator import get_iso_limit
 from app.models.schedule import (
     HeatWindow,
@@ -22,6 +23,7 @@ MACHINE_LABELS = {
     "FURNACE_1": "Furnace 1",
     "FURNACE_2": "Furnace 2",
     "FURNACE_3": "Furnace 3",
+    "CHARGE_1": "Charge bay",
     "CNC_1": "CNC 1",
     "CNC_2": "CNC 2",
     "CNC_3": "CNC 3",
@@ -29,6 +31,9 @@ MACHINE_LABELS = {
     "CNC_5": "CNC 5",
     "OVEN_1": "Paint oven",
     "OVEN_2": "Powder oven",
+    "QUENCH_1": "Quench",
+    "ASSEMBLY_1": "Assembly",
+    "QUALITY_1": "Quality",
     "CHILLER_1": "Chiller",
     "COMP_1": "Compressor",
 }
@@ -40,8 +45,10 @@ def machine_label(machine_id: str) -> str:
 
 
 def slot_clock(t: int, slot_minutes: int) -> str:
-    mins = t * slot_minutes
-    return f"Day {mins // 1440 + 1} {(mins // 60) % 24:02d}:{mins % 60:02d}"
+    """Day 1 starts at 08:00. Slot 0 is 08:00, not midnight."""
+    hour = hour_from_slot(t, slot_minutes)
+    minute = (t * slot_minutes) % 60
+    return f"Day {operational_day(t, slot_minutes)} {hour:02d}:{minute:02d}"
 
 
 def _ranges(slots: set[int]) -> list[tuple[int, int]]:

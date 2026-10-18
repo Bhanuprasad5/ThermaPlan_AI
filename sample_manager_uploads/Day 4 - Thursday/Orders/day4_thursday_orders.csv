@@ -1,9 +1,44 @@
 upload_batch_id,order_id,job_name,machine_id,station_id,routing_seq,duration_mins,duration_slots,kwh_per_op,restart_kwh,load_tag,splittable,due_slot,is_critical_melt
-BATCH_THU,THU-01,Impeller bore,CNC_1,CNC_BAY,1,120,8,70,4,shiftable,False,71,False
-BATCH_THU,THU-02,Impeller face,CNC_1,CNC_BAY,1,120,8,70,4,shiftable,False,71,False
-BATCH_THU,THU-03,Impeller keyway,CNC_1,CNC_BAY,1,120,8,70,4,shiftable,False,71,False
-BATCH_THU,THU-04,Casing turn,CNC_2,CNC_BAY,1,180,12,100,4,shiftable,False,191,False
-BATCH_THU,THU-05,Casing drill,CNC_2,CNC_BAY,1,180,12,100,4,shiftable,False,191,False
-BATCH_THU,THU-06,Volute mill,CNC_3,CNC_BAY,1,240,16,130,5,shiftable,False,191,False
-BATCH_THU,THU-07,Enamel cure,OVEN_1,OVEN_1,1,120,8,80,4,shiftable,False,191,False
-BATCH_THU,THU-08,Ice bank charge,CHILLER_1,CHILLER_1,1,360,24,180,15,interruptible,True,191,False
+BATCH_THU,THU-001,pump bodies melt night,FURNACE_1,FURNACE_1,1,600,40,8330.0,50,fixed,False,191,True
+BATCH_THU,THU-002,pump bodies melt late,FURNACE_1,FURNACE_1,1,600,40,8330.0,50,fixed,False,191,True
+BATCH_THU,THU-003,pump bodies melt night,FURNACE_2,FURNACE_2,1,600,40,8330.0,50,fixed,False,191,True
+BATCH_THU,THU-004,pump bodies melt late,FURNACE_2,FURNACE_2,1,600,40,8330.0,50,fixed,False,191,True
+BATCH_THU,THU-005,pump bodies melt night,FURNACE_3,FURNACE_3,1,600,40,8330.0,50,fixed,False,191,True
+BATCH_THU,THU-006,pump bodies melt late,FURNACE_3,FURNACE_3,1,600,40,8330.0,50,fixed,False,191,True
+BATCH_THU,THU-007,pump bodies charge night,CHARGE_1,CHARGING_BAY,1,600,40,1568.0,8.0,shiftable,False,191,False
+BATCH_THU,THU-008,pump bodies charge late,CHARGE_1,CHARGING_BAY,1,600,40,1568.0,8.0,shiftable,False,191,False
+BATCH_THU,THU-009,pump bodies setup,CNC_1,CNC_1,1,480,32,313.6,8.0,shiftable,False,191,False
+BATCH_THU,THU-010,pump bodies heavy,CNC_1,CNC_1,1,600,40,6076.0,8.0,shiftable,False,191,False
+BATCH_THU,THU-011,pump bodies follow,CNC_1,CNC_1,1,720,48,940.8,8.0,shiftable,False,191,False
+BATCH_THU,THU-012,pump bodies setup,CNC_2,CNC_2,1,480,32,313.6,8.0,shiftable,False,191,False
+BATCH_THU,THU-013,pump bodies heavy,CNC_2,CNC_2,1,600,40,6076.0,8.0,shiftable,False,191,False
+BATCH_THU,THU-014,pump bodies follow,CNC_2,CNC_2,1,720,48,940.8,8.0,shiftable,False,191,False
+BATCH_THU,THU-015,pump bodies setup,CNC_3,CNC_3,1,480,32,313.6,8.0,shiftable,False,191,False
+BATCH_THU,THU-016,pump bodies heavy,CNC_3,CNC_3,1,600,40,6076.0,8.0,shiftable,False,191,False
+BATCH_THU,THU-017,pump bodies follow,CNC_3,CNC_3,1,720,48,940.8,8.0,shiftable,False,191,False
+BATCH_THU,THU-018,pump bodies setup,CNC_4,CNC_4,1,480,32,313.6,8.0,shiftable,False,191,False
+BATCH_THU,THU-019,pump bodies heavy,CNC_4,CNC_4,1,600,40,6076.0,8.0,shiftable,False,191,False
+BATCH_THU,THU-020,pump bodies follow,CNC_4,CNC_4,1,720,48,940.8,8.0,shiftable,False,191,False
+BATCH_THU,THU-021,pump bodies setup,CNC_5,CNC_5,1,480,32,313.6,8.0,shiftable,False,191,False
+BATCH_THU,THU-022,pump bodies heavy,CNC_5,CNC_5,1,600,40,6076.0,8.0,shiftable,False,191,False
+BATCH_THU,THU-023,pump bodies follow,CNC_5,CNC_5,1,720,48,940.8,8.0,shiftable,False,191,False
+BATCH_THU,THU-024,pump bodies setup,OVEN_1,OVEN_1,1,480,32,313.6,8.0,shiftable,False,191,False
+BATCH_THU,THU-025,pump bodies heavy,OVEN_1,OVEN_1,1,600,40,4704.0,8.0,shiftable,False,191,False
+BATCH_THU,THU-026,pump bodies follow,OVEN_1,OVEN_1,1,720,48,940.8,8.0,shiftable,False,191,False
+BATCH_THU,THU-027,pump bodies setup,OVEN_2,OVEN_2,1,480,32,313.6,8.0,shiftable,False,191,False
+BATCH_THU,THU-028,pump bodies heavy,OVEN_2,OVEN_2,1,600,40,4704.0,8.0,shiftable,False,191,False
+BATCH_THU,THU-029,pump bodies follow,OVEN_2,OVEN_2,1,720,48,940.8,8.0,shiftable,False,191,False
+BATCH_THU,THU-030,pump bodies quench night,QUENCH_1,HEAT_TREAT_1,1,600,40,1568.0,8.0,shiftable,False,191,False
+BATCH_THU,THU-031,pump bodies quench late,QUENCH_1,HEAT_TREAT_1,1,600,40,1568.0,8.0,shiftable,False,191,False
+BATCH_THU,THU-032,pump bodies setup,ASSEMBLY_1,ASSEMBLY_1,1,480,32,313.6,8.0,shiftable,False,191,False
+BATCH_THU,THU-033,pump bodies heavy,ASSEMBLY_1,ASSEMBLY_1,1,600,40,3528.0,8.0,shiftable,False,191,False
+BATCH_THU,THU-034,pump bodies follow,ASSEMBLY_1,ASSEMBLY_1,1,720,48,940.8,8.0,shiftable,False,191,False
+BATCH_THU,THU-035,pump bodies setup,QUALITY_1,QUALITY_INSPECT,1,480,32,313.6,8.0,shiftable,False,160,False
+BATCH_THU,THU-036,pump bodies heavy,QUALITY_1,QUALITY_INSPECT,1,600,40,3528.0,8.0,shiftable,False,191,False
+BATCH_THU,THU-037,pump bodies follow,QUALITY_1,QUALITY_INSPECT,1,720,48,940.8,8.0,shiftable,False,191,False
+BATCH_THU,THU-038,ice bank trim,CHILLER_1,CHILLER_1,1,480,32,313.6,8.0,interruptible,False,191,False
+BATCH_THU,THU-039,ice bank heavy,CHILLER_1,CHILLER_1,1,600,40,7644.0,10,interruptible,False,191,False
+BATCH_THU,THU-040,ice bank hold,CHILLER_1,CHILLER_1,1,720,48,1058.4,8.0,interruptible,False,191,False
+BATCH_THU,THU-041,compressed air trim,COMP_1,COMP_1,1,480,32,313.6,8.0,interruptible,False,191,False
+BATCH_THU,THU-042,compressed air heavy,COMP_1,COMP_1,1,600,40,7644.0,10,interruptible,False,191,False
+BATCH_THU,THU-043,compressed air hold,COMP_1,COMP_1,1,720,48,1058.4,8.0,interruptible,False,191,False

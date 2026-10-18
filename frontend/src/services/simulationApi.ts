@@ -27,13 +27,17 @@ export interface SimulationResponse {
  * Trigger machine breakdown disruption in backend
  */
 export async function triggerBreakdown(req: BreakdownTriggerRequest): Promise<any> {
-  const { data } = await apiClient.post('/breakdown/trigger', {
-    machine_id: req.machine_id || 'CNC_1',
-    fault_slot: req.fault_slot ?? 14,
-    repair_duration_slots: req.repair_duration_slots ?? 16,
-    reason: req.reason || 'Spindle bearing failure / overheating',
-    trigger_source: req.trigger_source || 'SIMULATION_MANUAL',
-  });
+  const { data } = await apiClient.post(
+    '/breakdown/trigger',
+    {
+      machine_id: req.machine_id || 'CNC_1',
+      fault_slot: req.fault_slot ?? 14,
+      repair_duration_slots: req.repair_duration_slots ?? 16,
+      reason: req.reason || 'Spindle bearing failure / overheating',
+      trigger_source: req.trigger_source || 'SIMULATION_MANUAL',
+    },
+    { timeout: 240000 }
+  );
   return data;
 }
 

@@ -28,6 +28,7 @@ from app.services.bigquery_service import bq_service
 from app.services.firestore_fcm_service import firestore_fcm_service
 from app.services.gemini_flash_service import OFFICIAL_CITATIONS, gemini_flash_service
 from app.services.storage_service import storage_service
+from app.services import demo_plan_cache, plan_store
 from app.services.run_history import ActiveContext, run_history
 from app.services.weather_integrator import weather_integrator
 
@@ -685,6 +686,15 @@ async def solve_morning_plan(
     rosters = _heat_rosters_for(orders)
     weather_slots = await weather_integrator.fetch_48h_weather()
 
+    cached = demo_plan_cache.morning_plan(orders, plan_config)
+    if cached is not None:
+        run_history.set_active(ActiveContext(cached, orders, rosters, weather_slots))
+        if not any(r.get("plan_id") == cached.plan_id for r in run_history.runs):
+            run_history.record(cached)
+        if background_tasks is not None:
+            background_tasks.add_task(_persist_plan, cached)
+        return cached
+
     baseline_plan, optimized_plan = await asyncio.to_thread(
         solve_dual_schedules,
         orders=orders,
@@ -720,6 +730,7 @@ def _heat_rosters_for(orders: list[PlantOrder]) -> list[WorkstationRoster]:
 
 def _persist_plan(plan: SchedulePlanResponse) -> None:
     """Best-effort audit copy. The response never waits on BigQuery or Firestore."""
+    plan_store.save(plan)
     try:
         bq_service.save_solved_schedule(plan)
         for buf in plan.heat_buffers:
@@ -733,10 +744,13 @@ def _persist_plan(plan: SchedulePlanResponse) -> None:
 
 @router.get("/active-plan", response_model=SchedulePlanResponse)
 async def get_active_plan(background_tasks: BackgroundTasks):
-    """The plan most recently solved by this service, or a fresh solve of the default day."""
+    """The plan most recently solved by this process, else the last plan saved to disk."""
     if run_history.active:
         return run_history.active.plan
-    return await solve_morning_plan(None, background_tasks)
+    stored = plan_store.load()
+    if stored is not None:
+        return stored
+    raise HTTPException(status_code=404, detail="No plan yet")
 
 
 @router.get("/morning-plan", response_model=SchedulePlanResponse)
@@ -814,127 +828,34 @@ def _illustrative_tariff_periods() -> list[dict]:
     ]
 
 
-def _deterministic_constraints_from_text(text: str) -> list[dict]:
-    """Keyword parser used only when Gemini did not return a function call."""
-    lowered = (text or "").lower()
-    paint = "paint" in lowered
-    furnace = "furnace" in lowered
-    rows: list[dict] = []
-    if paint and not furnace:
-        rows.append({
-            "constraint_id": "CNS-PAINT-ONLY",
-            "station": "paint_oven_bay",
-            "work_class": 2,
-            "acclimatised": True,
-            "wbgt_limit_c": 28.0,
-            "frozen_window_hours": 0,
-            "unsure": False,
-            "source": "Deterministic fallback, no Gemini call",
-        })
-    if furnace and not paint:
-        no_pour = "15:00" in lowered or "15.00" in lowered or "no pour" in lowered
-        rows.append({
-            "constraint_id": "CNS-FURNACE-ONLY",
-            "station": "furnace_manual",
-            "work_class": 3,
-            "acclimatised": True,
-            "wbgt_limit_c": 26.0,
-            "frozen_window_hours": 2,
-            "no_pour_after_hour": 15 if no_pour else None,
-            "unsure": False,
-            "source": "Deterministic fallback, no Gemini call",
-        })
-    if "line 9" in lowered or "unknown station" in lowered:
-        rows.append({
-            "constraint_id": "CNS-UNSURE-STATION",
-            "station": "Please check",
-            "work_class": None,
-            "acclimatised": None,
-            "wbgt_limit_c": None,
-            "frozen_window_hours": None,
-            "unsure": True,
-            "source": "Deterministic fallback, no Gemini call",
-        })
-    if not rows:
-        rows.append({
-            "constraint_id": "CNS-PLANT-ISO",
-            "station": "all_manual_stations",
-            "work_class": None,
-            "acclimatised": True,
-            "wbgt_limit_c": None,
-            "frozen_window_hours": 2,
-            "unsure": True,
-            "source": "Deterministic fallback, no Gemini call",
-        })
-    return rows
-
-
 @router.post("/parse-rules")
 async def parse_rules_endpoint(
     csv_file: UploadFile | None = File(None),
     pdf_file: UploadFile | None = File(None),
     natural_language_rule: str = Form("Keep every station within its ISO 7243 limit, keep output at 98% or more, and enforce a 2-hour frozen window."),
 ):
-    """Gemini function-calling extraction. Falls back with an explicit source label."""
-    import time
+    """Gemini JSON extract of manager rules. WBGT values come from ISO 7243 Table A.1."""
     from app.config import get_settings
 
-    started = time.perf_counter()
-    gemini_res = None
-    source = "deterministic_fallback"
-    model_version = None
-    try:
-        gemini_res = await gemini_flash_service.extract_constraints_from_memo(natural_language_rule)
-    except Exception:
-        gemini_res = None
-
-    latency_ms = int((time.perf_counter() - started) * 1000)
-    c_list: list[dict] = []
-    if gemini_res and (gemini_res.shift_rules or gemini_res.machine_lockouts):
-        source = "gemini"
-        model_version = get_settings().GEMINI_FLASH_MODEL
-        for idx, rule in enumerate(gemini_res.shift_rules, 1):
-            c_list.append({
-                "constraint_id": f"CNS-GEMINI-SHIFT-{idx:02d}",
-                "station": rule.shift_name,
-                "work_class": None,
-                "acclimatised": True,
-                "wbgt_limit_c": None,
-                "frozen_window_hours": 2,
-                "mandatory_rest_minutes": rule.mandatory_rest_minutes,
-                "unsure": False,
-                "source": "gemini",
-            })
-        for idx, lock in enumerate(gemini_res.machine_lockouts, 1):
-            c_list.append({
-                "constraint_id": f"CNS-GEMINI-LOCK-{idx:02d}",
-                "station": lock.machine_id,
-                "work_class": None,
-                "acclimatised": True,
-                "wbgt_limit_c": None,
-                "frozen_window_hours": 2,
-                "lockout_start_slot": lock.lockout_start_slot,
-                "lockout_end_slot": lock.lockout_end_slot,
-                "unsure": False,
-                "source": "gemini",
-            })
-    if not c_list:
-        source = "deterministic_fallback"
-        model_version = None
-        c_list = _deterministic_constraints_from_text(natural_language_rule)
-
+    parsed = await gemini_flash_service.extract_manager_rules(natural_language_rule)
+    source = parsed.get("source") or "deterministic_fallback"
+    model_version = parsed.get("model")
     return {
-        "constraints": c_list,
+        "constraints": parsed.get("constraints") or [],
         "tariff_periods": _illustrative_tariff_periods(),
-        "frozen_window_hours": 2,
+        "frozen_window_hours": parsed.get("frozen_window_hours") or 2,
         "gemini_model": model_version,
         "model_version": model_version,
         "region": get_settings().VERTEX_REGION if source == "gemini" else None,
         "source": source,
-        "latency_ms": latency_ms,
+        "latency_ms": parsed.get("latency_ms"),
         "extraction_timestamp": datetime.now(UTC).isoformat(),
         "is_fallback": source != "gemini",
-        "label": "Gemini" if source == "gemini" else "Deterministic fallback, no Gemini call",
+        "label": (
+            f"{model_version}" if source == "gemini" and model_version
+            else "Deterministic fallback, no Gemini call"
+        ),
+        "error": parsed.get("error"),
     }
 
 

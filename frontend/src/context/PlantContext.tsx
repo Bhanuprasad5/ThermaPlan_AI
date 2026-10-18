@@ -13,7 +13,7 @@ import {
   INITIAL_WORKERS,
 } from '../constants/demoData';
 import { parseVoiceReport } from '../services/geminiService';
-import { explainActivePlan, solve48h } from '../services/managerApi';
+import { explainActivePlan, getActivePlan, solve48h } from '../services/managerApi';
 import { simulateWeatherSpike as apiSimulateWeatherSpike, triggerBreakdown as apiTriggerBreakdown } from '../services/simulationApi';
 import { sendEmergencySos as apiSendEmergencySos, sendWorkerCheckIn as apiSendWorkerCheckIn } from '../services/safetyApi';
 import { mapPlanToMetrics, mapSlotsToScheduledJobs, mapStationToMachine } from '../utils/mapper';
@@ -164,6 +164,7 @@ export const PlantProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [isSolvingBackend, setIsSolvingBackend] = useState<boolean>(false);
   const [activeBackendPlanId, setActiveBackendPlanId] = useState<string | null>(null);
   const [activeDatasetDay, setActiveDatasetDay] = useState<string>('day1_monday');
+  const [storageHydrated, setStorageHydrated] = useState(false);
 
   const updateWorkerRoster = (newWorkers: Worker[]) => {
     if (newWorkers && newWorkers.length > 0) {
@@ -211,6 +212,11 @@ export const PlantProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [selectedStationId, setSelectedStationId] = useState<string>('st_furnace_1');
 
   const applyPlan = (plan: SchedulePlanResponse) => {
+    try {
+      localStorage.setItem('teevra.activePlan', JSON.stringify(plan));
+    } catch {
+      /* private mode or a full quota should not block the dashboard */
+    }
     setBackendConnected(true);
     setActiveBackendPlanId(plan.plan_id);
     setActivePlan(plan);
@@ -281,6 +287,66 @@ export const PlantProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       ...curr,
     ]);
   };
+
+  useEffect(() => {
+    if (!storageHydrated) return;
+    try {
+      localStorage.setItem('teevra.alerts', JSON.stringify(alerts));
+    } catch {
+      /* ignore quota */
+    }
+  }, [alerts, storageHydrated]);
+
+  useEffect(() => {
+    if (!storageHydrated) return;
+    try {
+      localStorage.setItem('teevra.datasetDay', activeDatasetDay);
+    } catch {
+      /* ignore quota */
+    }
+  }, [activeDatasetDay, storageHydrated]);
+
+  useEffect(() => {
+    try {
+      const rawPlan = localStorage.getItem('teevra.activePlan');
+      if (rawPlan) {
+        const plan = JSON.parse(rawPlan) as SchedulePlanResponse;
+        if (plan?.plan_id && plan.kpi) applyPlan(plan);
+      }
+    } catch {
+      /* ignore corrupt cache */
+    }
+    try {
+      const rawAlerts = localStorage.getItem('teevra.alerts');
+      if (rawAlerts) {
+        const parsed = JSON.parse(rawAlerts) as AlertItem[];
+        if (Array.isArray(parsed)) setAlerts(parsed);
+      }
+    } catch {
+      /* ignore corrupt cache */
+    }
+    try {
+      const day = localStorage.getItem('teevra.datasetDay');
+      if (day) setActiveDatasetDay(day);
+    } catch {
+      /* ignore unreadable storage */
+    }
+    setStorageHydrated(true);
+
+    getActivePlan()
+      .then((plan) => {
+        if (plan?.plan_id) applyPlan(plan);
+      })
+      .catch((err: unknown) => {
+        const status =
+          typeof err === 'object' && err !== null && 'response' in err
+            ? (err as { response?: { status?: number } }).response?.status
+            : undefined;
+        if (status === 404) return;
+      });
+    // Mount-only: restore the last dashboard, then prefer the server copy when one exists.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const solveMorningPlan = async (
     uploadedCsv?: string,
@@ -873,7 +939,7 @@ export const PlantProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         timestamp: clock,
         status: 'new',
         title: `${machineId} down`,
-        description: `${nextJob.job_name} was due to start soon. Replanning around a 4-hour repair.`,
+        description: `${machineId} stays down from 30 minutes before ${nextJob.job_name} for the rest of the 48 hours. The next 2 hours on the other machines stay as planned. After that, its remaining jobs move to other machines and may finish a little later.`,
         pinned: true,
       },
       ...curr,

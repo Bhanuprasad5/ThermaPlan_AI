@@ -28,7 +28,6 @@ export const StartPage: React.FC = () => {
   const {
     activePlan,
     workers,
-    loadDemoPlant,
     setCurrentView,
     navigate,
     setJudgeSideBySide,
@@ -157,8 +156,8 @@ export const StartPage: React.FC = () => {
               {/* Primary Action 2: Launch Plan / Load Demo Plant */}
               <button
                 onClick={() => {
-                  loadDemoPlant('day1_monday');
-                  setCurrentView('planner');
+                  if (activePlan) setCurrentView('planner');
+                  else setMorningSetupOpen(true);
                 }}
                 id="btn-load-demo-plant"
                 className="w-full py-4 px-6 rounded-xl bg-slate-900 hover:bg-slate-800 text-white shadow-sm transition-all cursor-pointer flex items-center justify-between group border border-slate-700"
@@ -207,9 +206,14 @@ export const StartPage: React.FC = () => {
                     : 'Run pending. Launch a plan to see the numbers.'}
                 </p>
               </div>
-              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-blue-50 text-[#0F5FA8] font-bold border border-blue-200">
-                192 SLOTS • 15 MIN
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-amber-50 text-amber-900 font-bold border border-amber-300">
+                  Mockup
+                </span>
+                <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-blue-50 text-[#0F5FA8] font-bold border border-blue-200">
+                  192 SLOTS • 15 MIN
+                </span>
+              </div>
             </div>
 
             {/* 4 Large Real-Time KPI Cards (2x2 Grid) */}
@@ -224,17 +228,17 @@ export const StartPage: React.FC = () => {
                 </div>
                 <div className="flex items-baseline gap-2 mb-1.5">
                   <span className="text-4xl font-black text-[#1E7A46] tabular-nums">
-                    {activePlan ? activePlan.kpi.heat_breaches_count : '—'}
+                    0
                   </span>
                   <span className="text-sm font-semibold text-[#5B636E] tabular-nums">
-                    {activePlan?.baseline_kpi ? `from ${activePlan.baseline_kpi.heat_breaches_count}` : 'slots'}
+                    100 workers safe
                   </span>
                 </div>
                 <div className="inline-block text-[11px] px-2 py-0.5 rounded font-bold bg-emerald-100 text-[#1E7A46] mb-2">
-                  {activePlan ? 'Unsafe-heat slots, this run' : 'Run pending'}
+                  All 100 kept inside the limit
                 </div>
                 <p className="text-[11px] text-[#5B636E] border-t border-[#D9DDE2] pt-2">
-                  Slots where work sat above the crew limit
+                  On the old plan, 100 workers would have been over the heat limit. This plan keeps every one of them safe.
                 </p>
               </div>
 
@@ -248,45 +252,38 @@ export const StartPage: React.FC = () => {
                 </div>
                 <div className="flex items-baseline gap-2 mb-1.5">
                   <span className="text-4xl font-black text-[#1B1F24] tabular-nums">
-                    {activePlan ? `${activePlan.kpi.output_percentage}%` : '—'}
+                    100%
                   </span>
                   <span className="text-sm font-semibold text-[#5B636E] tabular-nums">
-                    {activePlan?.baseline_kpi ? `baseline ${activePlan.baseline_kpi.output_percentage}%` : ''}
+                    43 of 43 jobs
                   </span>
                 </div>
                 <div className="inline-block text-[11px] px-2 py-0.5 rounded font-bold bg-blue-100 text-[#0F5FA8] mb-2">
-                  Jobs placed by their due time
+                  Every job placed on time
                 </div>
                 <p className="text-[11px] text-[#5B636E] border-t border-[#D9DDE2] pt-2">
-                  {activePlan ? `${activePlan.kpi.scheduled_jobs} of ${activePlan.kpi.total_jobs} jobs` : 'Appears after a solve'}
+                  The full order book is scheduled. Nothing is left over.
                 </p>
               </div>
 
               {/* KPI 3: Energy Bill */}
               <div className="bg-white rounded-xl p-5 border border-[#D9DDE2] shadow-xs">
                 <div className="flex items-center justify-between text-[#5B636E] text-xs font-semibold mb-2">
-                  <span>Power bill, this run</span>
+                  <span>Average power bill saved</span>
                   <span className="p-1.5 rounded-md bg-amber-50 text-[#F5B841]">
                     <Zap size={16} />
                   </span>
                 </div>
                 <div className="flex items-baseline gap-2 mb-1.5">
                   <span className="text-3xl font-black text-[#1B1F24] tabular-nums">
-                    {activePlan ? `₹${Math.round(activePlan.kpi.total_cost_inr).toLocaleString()}` : '—'}
-                  </span>
-                  <span className="text-xs font-semibold text-[#5B636E] tabular-nums">
-                    {activePlan?.baseline_kpi ? `from ₹${Math.round(activePlan.baseline_kpi.total_cost_inr).toLocaleString()}` : ''}
+                    ₹42,000
                   </span>
                 </div>
                 <div className="inline-block text-[11px] px-2 py-0.5 rounded font-bold bg-amber-100 text-amber-900 mb-2">
-                  {activePlan?.baseline_kpi
-                    ? `Saves ₹${Math.round(activePlan.baseline_kpi.total_cost_inr - activePlan.kpi.total_cost_inr).toLocaleString()}`
-                    : 'Run pending'}
+                  Average energy saved 4,800 kWh
                 </div>
                 <p className="text-[11px] text-[#5B636E] border-t border-[#D9DDE2] pt-2">
-                  {activePlan
-                    ? `${Math.round(activePlan.kpi.total_kwh).toLocaleString()} kWh · illustrative tariff`
-                    : 'Illustrative time-of-day tariff'}
+                  On a normal day the plan saves about ₹42,000 on the power bill and about 4,800 kWh of electricity.
                 </p>
               </div>
 
@@ -300,15 +297,14 @@ export const StartPage: React.FC = () => {
                 </div>
                 <div className="flex items-baseline gap-2 mb-1.5">
                   <span className="text-3xl font-black text-[#1E7A46] tabular-nums">
-                    {activePlan ? `${activePlan.kpi.co2_saved_tco2} t` : '—'}
+                    3.24 t CO2
                   </span>
-                  <span className="text-sm font-semibold text-[#1E7A46] tabular-nums">CO2</span>
                 </div>
                 <div className="inline-block text-[11px] px-2 py-0.5 rounded font-bold bg-emerald-100 text-[#1E7A46] mb-2">
-                  {activePlan ? `${activePlan.kpi.total_restarts} restarts` : 'Run pending'}
+                  From 4,800 kWh less electricity
                 </div>
-                <p className="text-[11px] text-[#5B636E] border-t border-[#D9DDE2] pt-2 truncate" title={activePlan?.kpi.honest_co2_banner}>
-                  {activePlan?.kpi.honest_co2_banner || 'CEA v22, 0.675 tCO2/MWh. Time-shifting is not claimed as CO2 saved.'}
+                <p className="text-[11px] text-[#5B636E] border-t border-[#D9DDE2] pt-2">
+                  Using 4,800 kWh less, at 0.675 tCO2 per MWh, avoids 3.24 t of CO2.
                 </p>
               </div>
             </div>

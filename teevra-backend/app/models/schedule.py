@@ -121,6 +121,32 @@ class ExplanationTrace(BaseModel):
     error: str | None = None
 
 
+class CrewMember(BaseModel):
+    name: str
+    role: str
+    heat_class: int
+    tag: str
+
+
+class JobCrew(BaseModel):
+    machine_id: str
+    order_id: str
+    job_name: str
+    load_tag: Literal["fixed", "shiftable", "interruptible"]
+    expected_wbgt_c: float
+    supervisor: str
+    members: list[CrewMember] = Field(default_factory=list)
+
+
+class CrewSummary(BaseModel):
+    workers_on_roster: int
+    workers_assigned: int
+    avg_hours: float
+    machines_used: int
+    machines_total: int
+    machine_hours: float
+
+
 class SchedulePlanResponse(BaseModel):
     plan_id: str
     plan_hash: str = ""
@@ -154,3 +180,5 @@ class SchedulePlanResponse(BaseModel):
     heat_windows: list[HeatWindow] = Field(default_factory=list)
     tariff_bands: list[TariffBand] = Field(default_factory=list)
     job_moves: list[JobMove] = Field(default_factory=list)
+    job_crews: list[JobCrew] = Field(default_factory=list)
+    crew_summary: CrewSummary | None = None

@@ -74,3 +74,7 @@ The orders, the weather, and the tariff are simulated so a judge can see a clear
 frontend/         React planner, Gantt, evals, floor tablet
 teevra-backend/   FastAPI, CP-SAT solver, five day books
 ```
+
+## Built with
+
+This project was built using Anti Gravity.
