@@ -1,4 +1,4 @@
-# TEEVRA: Heat-Safe, Carbon-Aware Industrial Production Scheduler
+# TEEVRA: Heat-Safe, Carbon-Aware Industrial Production Intelligent Scheduler(AI Builder Cup 2026)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python: 3.12](https://img.shields.io/badge/Python-3.12-3776AB.svg?logo=python&logoColor=white)](https://www.python.org/)
@@ -7,6 +7,17 @@
 [![Google OR-Tools](https://img.shields.io/badge/Google_OR--Tools-CP--SAT_v9.11-4285F4.svg?logo=google&logoColor=white)](https://developers.google.com/optimization)
 [![Google Cloud Run](https://img.shields.io/badge/Google_Cloud_Run-Production-4285F4.svg?logo=google-cloud&logoColor=white)](https://cloud.google.com/run)
 [![Firebase Hosting](https://img.shields.io/badge/Firebase_Hosting-Production-FFCA28.svg?logo=firebase&logoColor=black)](https://firebase.google.com/)
+[![Google Gemini](https://img.shields.io/badge/Gemini_Vision-Image_Analysis-4285F4.svg?logo=googlegemini&logoColor=white)](https://cloud.google.com/vertex-ai/generative-ai/docs)
+[![Vertex AI](https://img.shields.io/badge/Vertex_AI-Production-4285F4.svg?logo=googlecloud&logoColor=white)](https://cloud.google.com/vertex-ai)
+[![Secret Manager](https://img.shields.io/badge/Secret_Manager-Credentials-4285F4.svg?logo=googlecloud&logoColor=white)](https://cloud.google.com/secret-manager)
+[![Pub/Sub](https://img.shields.io/badge/Pub%2FSub-Event_Streaming-4285F4.svg?logo=googlepubsub&logoColor=white)](https://cloud.google.com/pubsub)
+[![Eventarc](https://img.shields.io/badge/Eventarc-Event--Driven-4285F4.svg?logo=googlecloud&logoColor=white)](https://cloud.google.com/eventarc)
+[![Cloud Storage](https://img.shields.io/badge/Cloud_Storage-Image_Bucket-4285F4.svg?logo=googlecloud&logoColor=white)](https://cloud.google.com/storage)
+[![Telegram](https://img.shields.io/badge/Telegram-Bot_Alerts-26A5E4.svg?logo=telegram&logoColor=white)](https://core.telegram.org/bots/api)
+[![Cloud Build](https://img.shields.io/badge/Cloud_Build-CI%2FCD-4285F4.svg?logo=googlecloud&logoColor=white)](https://cloud.google.com/build)
+[![Artifact Registry](https://img.shields.io/badge/Artifact_Registry-Container_Images-4285F4.svg?logo=googlecloud&logoColor=white)](https://cloud.google.com/artifact-registry)
+[![BigQuery](https://img.shields.io/badge/BigQuery-Analytics-4285F4.svg?logo=googlebigquery&logoColor=white)](https://cloud.google.com/bigquery)
+
 
 TEEVRA is an automated, industrial-grade 48-hour continuous production scheduler designed for heavy thermal and metallurgical manufacturing facilities in South Asia. Operating across 192 discrete 15-minute planning slots and 16 heterogeneous workstations, TEEVRA simultaneously solves for statutory thermal safety thresholds under **ISO 7243:2017** and the **Occupational Safety, Health and Working Conditions (OSH) Code 2020**, while optimizing against industrial **Time-of-Day (ToD)** electricity tariffs and **Central Electricity Authority (CEA)** grid emission factors.
 
