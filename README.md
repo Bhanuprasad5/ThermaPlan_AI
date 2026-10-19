@@ -77,7 +77,7 @@ When a mechanical or electrical failure occurs (e.g., CNC Line 2 spindle fault):
 The floor worker tablet operates in English and Telugu (`తెలుగు`):
 * Contextual thermal check-in prompts ("Are you okay? / మీరు క్షేమంగా ఉన్నారా?") scheduled before hot operating windows.
 * One-tap response options: **OK**, **Too Hot (ఎక్కువ వేడి)**, **Dizzy (తలతిరుగుతుంది)**, and **Hazard (ప్రమాదం)**.
-* **Emergency SOS Hold**: Bypasses AI models and cloud queues entirely; a 2.5-second physical press executes an immediate hardware interrupt, halts high-risk tooling, triggers audible plant-floor alerts, and routes supervisor relief dispatch.
+* **Emergency SOS Hold**: Bypasses AI models and cloud queues entirely; a 2.5-second physical press executes an immediate hardware interrupt, halts high-risk tooling, and triggers audible plant-floor alerts. Also sends instant supervisor alerts and personalized Telegram notifications to managers, with escalation.
 
 ---
 
